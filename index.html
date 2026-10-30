@@ -230,6 +230,9 @@ details[open] summary::after{content:" ⌄"}
 .welcome h2{text-align:center;text-transform:none}
 .welcome p.c{text-align:center;color:var(--tx2);margin:6px 0 14px}
 
+.updbar{position:fixed;left:12px;right:12px;bottom:calc(var(--sab) + 84px);z-index:30;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-radius:16px;
+  background:linear-gradient(180deg,var(--gold),var(--gold2));color:var(--goldtx);font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:fade .3s ease;max-width:616px;margin:0 auto}
+.updbar b{background:rgba(0,0,0,.18);padding:6px 10px;border-radius:10px;white-space:nowrap}
 /* ===== écran de chargement ===== */
 #splash{position:fixed;inset:0;z-index:100;background:#08080a;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#f5f5f7;
   transition:opacity .55s ease,transform .55s cubic-bezier(.2,.8,.2,1),filter .55s ease}
@@ -353,7 +356,9 @@ const Engine = (() => {
 
   /* ---------- heures ---------- */
   const toMin = t => { if (!t) return null; const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-  const segMin = s => { const a = toMin(s[0]), b = toMin(s[1]); if (a == null || b == null) return 0; return b >= a ? b - a : b + 1440 - a; };
+  // une plage qui finit avant de commencer n'est acceptée que si elle passe vraiment la nuit (début ≥ 17 h, fin ≤ 9 h)
+const segMin = s => { const a = toMin(s[0]), b = toMin(s[1]); if (a == null || b == null || isNaN(a) || isNaN(b)) return 0; if (b > a) return b - a; if (b < a && a >= 17 * 60 && b <= 9 * 60) return b + 1440 - a; return 0; };
+const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
   const sumSeg = segs => (segs || []).reduce((t, s) => t + segMin(s), 0);
   const ticketEligible = segs => {
     let am = false, pm = false;
@@ -382,12 +387,13 @@ const Engine = (() => {
     prevoyancePatronale: 83.20,
     mutuelleSalarie: 0,
     pas: 0,
-    clotureJour: 0,
+    clotureJour: 26,
     deduireManquantes: false,
     cp: { mode: 'ouvrables', report: 7 },
     brutSaisonnier: 5476.33,
     finContrat: { precarite: true, inclureCP: true },
     theme: 'dark',
+    schema: 2,
     github: { owner: '', repo: '', branch: 'main', path: 'centime-data.json', token: '', auto: false, last: null },
   });
   const newState = () => ({ v: 1, settings: defaults(), days: {}, months: {}, clock: null });
@@ -408,7 +414,7 @@ const Engine = (() => {
     else type = 'repos';
     if (hol && planMin > 0 && type === 'repos') type = 'ferie';
     const worked = type === 'travail' ? sumSeg(segs) : 0;
-    const paidAbs = (type === 'cp' || type === 'recup' || type === 'ferie') ? planMin : 0;
+    const paidAbs = (type === 'cp' || type === 'recup' || type === 'ferie' || (hol && (type === 'maladie' || type === 'absence'))) ? planMin : 0;
     const unpaid = (type === 'maladie' || type === 'absence') && !hol ? planMin : 0;
     let ticket = false;
     if (st.tickets.actif && type === 'travail') {
@@ -524,11 +530,12 @@ const Engine = (() => {
       if (!di.inC) continue;
       const ymc = ymOf(k), M = months[ymc];
       if (M) {
-        M.unpaid += di.unpaid; M.workedCal += di.worked;
+        M.workedCal += di.worked;
         if (!di.confirmed && di.planMin > 0 && !di.hol) { if (k <= today) M.unconfirmed++; else M.futurePlanned++; }
       }
       const P = months[payMonth(S, k)];
       if (P) {
+        if (di.unpaid && M && M.planFull) { P.unpaid += di.unpaid; P.absRaw = (P.absRaw || 0) + di.unpaid / M.planFull; }
         if (di.ticket) P.tickets++;
         if (di.worked) {
           if (dow(k) === 0) P.sun += di.worked;
@@ -547,16 +554,27 @@ const Engine = (() => {
       }
       if (!any) continue;
       const s25 = st.hs.seuil25 * 60, s50 = st.hs.seuil50 * 60;
-      // jours de repos travaillés (lundi, dimanche…) : heures sup d'office si l'option est active
-      const forced = st.hs.reposEnHS ? rest : 0;
-      const totHS = forced ? forced + Math.max(0, eff - forced - s25) : Math.max(0, eff - s25);
-      const min50 = Math.min(totHS, Math.max(0, eff - s50)), min25 = totHS - min50;
-      const credited = eff + paid + unpaid;
-      const minNM = Math.max(0, Math.max(0, credited - P) - min25 - min50);
-      const minDef = Math.max(0, P - credited);
+      let min25, min50, minNM, minDef, forced = 0, swap = 0;
+      if (st.hs.reposEnHS) {
+        // Jour de repos travaillé (lundi, dimanche…) = heures sup d'office…
+        // …sauf la part qui remplace des heures prévues non faites la même semaine (échange de jour).
+        const effN = eff - rest, credN = effN + paid + unpaid;
+        const missing = Math.max(0, P - credN);
+        swap = Math.min(rest, missing); forced = rest - swap;
+        const tot = forced + Math.max(0, effN - s25);
+        min50 = Math.min(tot, Math.max(0, eff - s50)); min25 = tot - min50;
+        minNM = Math.max(0, Math.max(0, credN + rest - P) - tot);
+        minDef = missing - swap;
+      } else {
+        // règle légale stricte : heures sup au-delà de 35 h de travail effectif dans la semaine
+        const tot = Math.max(0, eff - s25), credited = eff + paid + unpaid;
+        min50 = Math.max(0, eff - s50); min25 = tot - min50;
+        minNM = Math.max(0, Math.max(0, credited - P) - tot);
+        minDef = Math.max(0, P - credited);
+      }
       const sunday = addDays(m, 6);
       const ym = payMonth(S, sunday);
-      const w = { monday: m, sunday, num: isoWeek(m), eff, paid, unpaid, P, min25, min50, minNM, minDef, rest, forced, ym, days: list };
+      const w = { monday: m, sunday, num: isoWeek(m), eff, paid, unpaid, P, min25, min50, minNM, minDef, rest, forced, swap, ym, days: list };
       weeks.push(w);
       const M = months[ym];
       if (M) { M.min25 += min25; M.min50 += min50; M.minNM += minNM; M.minDef += minDef; M.weeks.push(w); }
@@ -566,7 +584,7 @@ const Engine = (() => {
     const h = mn => r2(mn / 60);
     Object.values(months).forEach(M => {
       const base = M.planFull && M.planInC !== M.planFull ? r2(full * M.planInC / M.planFull) : full;
-      const absDed = M.unpaid && M.planFull ? r2(full * M.unpaid / M.planFull) : 0;
+      const absDed = M.absRaw ? r2(full * M.absRaw) : 0;
       const defDed = st.deduireManquantes && M.minDef && M.planFull ? r2(full * M.minDef / M.planFull) : 0;
       const mo = S.months[M.ym] || {};
       M.inputs = { base, absDed, hAbs: h(M.unpaid), defDed, hDef: h(M.minDef), h25: h(M.min25), h50: h(M.min50), hNM: h(M.minNM),
@@ -607,7 +625,7 @@ const Engine = (() => {
       const di = R.days[k] || dayInfo(S, k);
       if (di.hol) continue;
       if (di.type === 'cp' && di.planMin > 0) { pris.push({ k, auto: false }); continue; }
-      if (!ouvres && di.planMin === 0 && dow(k) !== 0) {
+      if (!ouvres && di.planMin === 0 && dow(k) !== 0 && (di.type === 'repos' || di.type === 'cp')) {
         // jour ouvrable non travaillé (ex. lundi) : compté si la dernière journée prévue avant lui est un congé
         for (let j = 1; j <= 6; j++) {
           const p = addDays(k, -j); if (p < deb) break;
@@ -661,7 +679,7 @@ const Engine = (() => {
   }
 
   return { r2, r4, toKey, fromKey, addDays, dow, ymOf, daysInMonth, addMonths, mondayOf, dayDiff, isoWeek, todayKey,
-    holidayName, toMin, segMin, sumSeg, ticketEligible, defaults, newState, dayInfo, payMonth, payslip, compute, selfTest, SEPT };
+    holidayName, toMin, segMin, segValid, sumSeg, ticketEligible, defaults, newState, dayInfo, payMonth, payslip, compute, selfTest, SEPT };
 })();
 if (typeof module !== 'undefined') module.exports = Engine;
 
@@ -674,7 +692,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.2';
+const VERSION = '1.3';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -732,7 +750,10 @@ function merge(def, val) {
 }
 function hydrate(j) {
   const s = E.newState();
-  s.settings = merge(s.settings, j.settings || {});
+  const old = j.settings || {};
+  s.settings = merge(s.settings, old);
+  // v1.3 : clôture de paie au 26 (déduite du bulletin de septembre) pour les données créées avant
+  if (!old.schema) { if (!old.clotureJour) s.settings.clotureJour = 26; s.settings.schema = 2; }
   s.days = j.days || {}; s.months = j.months || {}; s.clock = j.clock || null; s.onboarded = !!j.onboarded;
   return s;
 }
@@ -930,6 +951,7 @@ function vHours() {
       if (w.min25) tags.push(`<span class="badge g">+${hm(w.min25)} à ${S.settings.hs.maj25} %</span>`);
       if (w.min50) tags.push(`<span class="badge g">+${hm(w.min50)} à ${S.settings.hs.maj50} %</span>`);
       if (w.forced) tags.push(`<span class="badge g">dont ${hm(w.forced)} sur un jour de repos</span>`);
+      if (w.swap) tags.push(`<span class="badge b">${hm(w.swap)} du jour de repos remplacent un jour prévu non travaillé</span>`);
       if (w.minNM) tags.push(`<span class="badge">+${hm(w.minNM)} normales</span>`);
       if (w.minDef) tags.push(`<span class="badge o">−${hm(w.minDef)} manquantes</span>`);
       if (w.paid) tags.push(`<span class="badge b">${hm(w.paid)} payées non travaillées</span>`);
@@ -940,9 +962,9 @@ function vHours() {
   }
   h += `<div class="card"><details><summary>Comment sont comptées les heures sup ?</summary><div class="help">
     <p>Par <b>semaine civile</b> (lundi → dimanche), comme sur ton bulletin (« HS semaine 39 »). Au-delà de ${S.settings.hs.seuil25} h de travail effectif : +${S.settings.hs.maj25} % jusqu'à ${S.settings.hs.seuil50} h, puis +${S.settings.hs.maj50} %.</p>
-    ${S.settings.hs.reposEnHS ? '<p><b>Jour de repos travaillé</b> (lundi, dimanche…) : toutes ces heures sont des heures sup, même si la semaine fait moins de ' + S.settings.hs.seuil25 + ' h. Réglable dans Réglages → Contrat.</p>' : ''}
+    ${S.settings.hs.reposEnHS ? '<p><b>Jour de repos travaillé</b> (lundi, dimanche…) : toutes ces heures sont des heures sup, même si la semaine fait moins de ' + S.settings.hs.seuil25 + ' h (semaine avec férié ou congé). Seule exception : si tu n\'as pas travaillé un de tes jours prévus la même semaine (échange de jour), les heures du lundi le remplacent d\'abord ; le reste est en heures sup. Réglable dans Réglages → Contrat.</p>' : ''}
     <p>Les congés et jours fériés ne comptent pas comme travail effectif pour le seuil. Si tu fais des heures en plus une semaine avec un férié, elles sont payées au taux normal tant que tu ne dépasses pas ${S.settings.hs.seuil25} h effectives.</p>
-    <p>Une semaine est payée sur le bulletin du mois où tombe son dimanche${+S.settings.clotureJour ? ` (clôture le ${S.settings.clotureJour})` : ''}. Réglable dans Réglages → Paie.</p></div></details></div>`;
+    <p>${+S.settings.clotureJour ? `La paie est clôturée le ${S.settings.clotureJour} : une semaine dont le dimanche tombe après le ${S.settings.clotureJour} est payée le mois suivant (comme ta semaine 35, fin août, payée en septembre). Pareil pour les tickets resto et les absences.` : 'Une semaine est payée sur le bulletin du mois où tombe son dimanche.'} Réglable dans Réglages → Paie.</p></div></details></div>`;
   return h;
 }
 
@@ -1039,7 +1061,7 @@ function vCP() {
   h += `<div class="card hero"><div class="lbl">Solde disponible aujourd'hui</div>
     <div class="big num">${nd(C.solde)}<span>jours</span></div>
     <div class="bar" style="margin:4px 0 10px"><i style="width:${totalVu ? Math.max(0, Math.min(100, C.solde / totalVu * 100)) : 0}%"></i></div>
-    <div class="sub"><span>Jours <b>${C.unite}</b></span><span>Au 27/03 : <b>${C.soldeFin} j</b> si rien d'autre n'est posé</span></div></div>`;
+    <div class="sub"><span>Jours <b>${C.unite}</b></span><span>Au ${dShort(st.contrat.fin)} : <b>${C.soldeFin} j</b> si rien d'autre n'est posé</span></div></div>`;
   h += `<div class="card"><div class="rows">
     <div class="row"><span class="l">Reportés du contrat saisonnier</span><span class="v num">${nd(C.report)} j</span></div>
     <div class="row"><span class="l">Acquis depuis le ${dDate(st.contrat.debut)}</span><span class="v num">+${nd(C.acquis)} j</span></div>
@@ -1114,7 +1136,7 @@ function vSettings(embedded) {
   }).join('')}<p class="tiny" style="margin-top:8px">Total : <b>${hm(tot)}</b> par semaine. Ces horaires préremplissent chaque journée ; tu corriges au jour le jour.</p></div>`;
 
   h += `<div class="card"><h3>Paie</h3>
-    ${fSel('clotureJour', 'Clôture des heures sup et tickets', 'semaines payées le mois de leur dimanche', [[0, 'Fin du mois'], [15, 'Le 15'], [20, 'Le 20'], [21, 'Le 21'], [22, 'Le 22'], [23, 'Le 23'], [24, 'Le 24'], [25, 'Le 25']], 'num')}
+    ${fSel('clotureJour', 'Clôture de la paie', 'heures sup, tickets et absences après cette date → mois suivant (≈ 26 d\'après ton bulletin de septembre)', [[0, 'Fin du mois'], [15, 'Le 15'], [20, 'Le 20'], [21, 'Le 21'], [22, 'Le 22'], [23, 'Le 23'], [24, 'Le 24'], [25, 'Le 25'], [26, 'Le 26'], [27, 'Le 27'], [28, 'Le 28']], 'num')}
     ${fNum('pas', 'Taux de prélèvement à la source', '% · 0 % sur ton bulletin')}
     ${fSw('tickets.actif', 'Tickets restaurant', '1 par journée entière (matin + après-midi)')}
     ${fNum('tickets.valeur', 'Valeur d\'un ticket', '€')}${fNum('tickets.partEmployeur', 'Part employeur', '%')}
@@ -1181,13 +1203,14 @@ function sheetDay() {
     <div class="seg types">${types.map(t => `<button data-a="dType" data-v="${t[0]}" class="${draft.type === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>`;
   if (draft.type === 'travail') {
     h += `<div class="sec"><div class="lb">Plages horaires</div><div class="slots">${draft.seg.map((s, i) => `<div class="slot"><input type="time" data-slot="${i}" data-p="0" value="${s[0] || ''}"><span class="ar">→</span><input type="time" data-slot="${i}" data-p="1" value="${s[1] || ''}"><button class="del" data-a="dDel" data-i="${i}" aria-label="Supprimer">${IC.x}</button></div>`).join('') || '<div class="empty">Aucune plage : 0 h travaillée</div>'}</div>
-      ${!plan.length && S.settings.hs.reposEnHS ? '<p class="tiny" style="margin-top:8px;color:var(--green);font-weight:700">Jour de repos : toutes ces heures comptent en heures sup (+' + S.settings.hs.maj25 + ' %).</p>' : ''}
+      <p class="tiny neg" id="dWarn" style="margin-top:8px;font-weight:700"></p>
+      ${!plan.length && S.settings.hs.reposEnHS ? '<p class="tiny" style="margin-top:8px;color:var(--green);font-weight:700">Jour de repos : toutes ces heures comptent en heures sup (+' + S.settings.hs.maj25 + ' %), sauf si tu as sauté un jour prévu cette semaine.</p>' : ''}
       <div class="qk"><button data-a="dAdd">+ Plage</button><button data-a="dQuick" data-v="plan">Horaire prévu</button><button data-a="dQuick" data-v="-15">−15 min</button><button data-a="dQuick" data-v="15">+15 min</button><button data-a="dQuick" data-v="30">+30 min</button><button data-a="dQuick" data-v="60">+1 h</button></div></div>
       <div class="sec"><div class="lb">Ticket restaurant</div><div class="seg">${[['auto', 'Auto'], ['oui', 'Oui'], ['non', 'Non']].map(o => `<button data-a="dTicket" data-v="${o[0]}" class="${draft.ticket === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div><p class="tiny" style="margin-top:6px" id="dTick"></p></div>`;
   } else {
     const msg = {
       cp: 'Congé payé : salaire maintenu, journée décomptée de ton solde.',
-      repos: di.hol ? 'Jour férié chômé : payé normalement, sans effet sur ta paie.' : plan.length ? 'Jour prévu mais non travaillé et sans motif : ces heures apparaîtront comme manquantes.' : 'Jour de repos : sans effet sur ta paie.',
+      repos: di.hol ? 'Jour férié chômé : payé normalement, sans effet sur ta paie.' : plan.length ? 'Jour prévu non travaillé, sans motif. Si tu as travaillé ton lundi à la place cette semaine (échange de jour), ces heures sont compensées ; sinon elles apparaissent comme heures manquantes. Pour un congé, choisis plutôt « Congé ».' : 'Jour de repos : sans effet sur ta paie.',
       maladie: `Arrêt maladie : retenue de ${hm(di.planMin)} sur le salaire (méthode des heures réelles). Les indemnités de la Sécu arrivent à part.`,
       absence: `Absence non rémunérée : retenue de ${hm(di.planMin)} sur le salaire.`,
       recup: 'Récupération / repos compensateur : payé, sans compter comme travail effectif.',
@@ -1208,6 +1231,9 @@ function refreshDayTotals() {
   const hsTag = draft.type === 'travail' && !di.planMin && w && S.settings.hs.reposEnHS ? ' HS' : '';
   const el = document.getElementById('dTot');
   if (el) el.innerHTML = `<span class="muted">${draft.type === 'travail' ? 'Total du jour' : TYPES[draft.type === 'repos' && di.hol ? 'ferie' : draft.type]}</span><span><b class="num">${hm(w)}</b> ${diff ? `<span class="badge ${diff > 0 ? 'g' : 'o'}">${diff > 0 ? '+' : ''}${hm(diff)}${hsTag}</span>` : ''}</span>`;
+  const wn = document.getElementById('dWarn');
+  if (wn) wn.textContent = draft.type === 'travail' && draft.seg.some(x => !E.segValid(x)) ? 'Une plage finit avant de commencer : vérifie les heures (matin / après-midi). Elle compte pour 0 h.' : '';
+  document.querySelectorAll('.slot').forEach((el, i) => { const x = draft.seg[i]; el.style.outline = x && !E.segValid(x) ? '2px solid var(--red)' : ''; el.style.borderRadius = '12px'; });
   const tk = document.getElementById('dTick');
   if (tk) { const el2 = E.ticketEligible(draft.seg); tk.textContent = draft.ticket === 'auto' ? (el2 ? 'Journée entière : 1 ticket.' : 'Pas de journée entière : pas de ticket.') : ''; }
 }
@@ -1226,6 +1252,12 @@ function closeSheet() {
   ui.sheet = null;
   if (document.activeElement) document.activeElement.blur();
 }
+function planSummary() {
+  const p = S.settings.planning, days = [1, 2, 3, 4, 5, 6, 0].filter(d => (p[d] || []).length);
+  const tot = days.reduce((a, d) => a + E.sumSeg(p[d]), 0);
+  const first = days.length ? p[days[0]] : [];
+  return `${days.map(d => JC[d].replace('.', '')).join(', ')} · ${hm(tot)}<br><span class="tiny">${segTxt(first)}</span>`;
+}
 function welcome() {
   const st = S.settings, T = E.selfTest(st);
   ui.sheet = { kind: 'welcome' };
@@ -1233,8 +1265,7 @@ function welcome() {
     <p class="c">Tes heures, tes heures sup, tes congés et ton salaire net, au centime près.</p>
     <div class="card" style="box-shadow:none"><div class="rows">
       <div class="row"><span class="l">Contrat</span><span class="v">CDD · ${dShort(st.contrat.debut)} → ${dShort(st.contrat.fin)}</span></div>
-      <div class="row"><span class="l">Horaires</span><span class="v">mar → sam · 35 h</span></div>
-      <div class="row"><span class="l"></span><span class="v tiny">9h30–12h30 · 15h00–19h00</span></div>
+      <div class="row"><span class="l">Horaires</span><span class="v">${planSummary()}</span></div>
       <div class="row"><span class="l">Salaire de base</span><span class="v num">${eur(r2(st.tauxHoraire * st.heuresMensuelles))}</span></div>
       <div class="row"><span class="l">Taux horaire</span><span class="v num">${nf4.format(st.tauxHoraire)} €</span></div>
       <div class="row"><span class="l">Tickets resto</span><span class="v">${n2(st.tickets.valeur)} € · ${st.tickets.partEmployeur} % employeur</span></div>
@@ -1454,6 +1485,7 @@ function splash() {
   if (!el) { if (!S.onboarded) setTimeout(welcome, 350); return; }
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const dur = reduce ? 450 : 2250;
+  const sig = el.querySelector('.sp-sig'); if (sig) sig.textContent = 'Au centime près · v' + VERSION;
   try {
     const ym = contractYm(E.ymOf(today())), net = R.months[ym].pay.net;
     document.getElementById('spLbl').textContent = 'Net estimé · ' + ymMonth(ym);
@@ -1471,7 +1503,35 @@ function splash() {
   setTimeout(done, dur);
   el.addEventListener('click', done);
 }
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { });
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => { });
+/* ---------- mises à jour : l'appli vérifie elle-même si une nouvelle version est en ligne ---------- */
+let lastCheck = 0;
+async function checkUpdate() {
+  if (!location.protocol.startsWith('http') || Date.now() - lastCheck < 30000) return;
+  lastCheck = Date.now();
+  try {
+    const r = await fetch('./index.html?v=' + Date.now(), { cache: 'no-store' });
+    const m = (await r.text()).match(/const VERSION = '([\d.]+)'/);
+    if (m && m[1] !== VERSION) showUpdate(m[1]);
+  } catch (e) { }
+}
+function showUpdate(v) {
+  if (document.getElementById('upd')) return;
+  const b = document.createElement('button');
+  b.id = 'upd'; b.className = 'updbar';
+  b.innerHTML = `Nouvelle version ${v} disponible <b>Mettre à jour</b>`;
+  b.onclick = async () => {
+    b.textContent = 'Mise à jour…';
+    try {
+      if (navigator.serviceWorker) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(x => x.update())); }
+      if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); }
+    } catch (e) { }
+    location.reload();
+  };
+  document.body.appendChild(b);
+}
+setTimeout(checkUpdate, 3000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
 
 </script>
 </body>
