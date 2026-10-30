@@ -1,5 +1,5 @@
 // Centime — service worker : l'appli marche hors connexion
-const CACHE = 'centime-v2';
+const CACHE = 'centime-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(FILES.map(f => c.add(f).catch(() => {})))).then(() => self.skipWaiting()));

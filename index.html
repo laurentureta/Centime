@@ -106,6 +106,7 @@ button{background:none;border:0;cursor:pointer}
 .cd .t{font-size:11px;font-weight:700;white-space:nowrap}
 .cd.w{background:var(--goldbg)}.cd.w .t{color:var(--gold)}
 .cd.plan{background:transparent;border:1.5px dashed var(--line)}.cd.plan .t{color:var(--tx3)}
+.cd.hsday{background:rgba(50,215,75,.16);border-color:transparent}.cd.hsday .t{color:var(--green)}.cd.plan.hsday{border:1.5px dashed rgba(50,215,75,.5)}
 .cd.cp{background:rgba(100,210,255,.15)}.cd.cp .t{color:var(--blue)}
 .cd.ferie{background:rgba(191,90,242,.15)}.cd.ferie .t{color:var(--purple)}
 .cd.maladie{background:rgba(255,69,58,.14)}.cd.maladie .t{color:var(--red)}
@@ -118,11 +119,13 @@ button{background:none;border:0;cursor:pointer}
 .cd .cpx{position:absolute;top:3px;left:4px;width:6px;height:6px;border-radius:50%;background:var(--blue)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--tx2);margin-top:12px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-.week{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);gap:10px}
+.week{padding:12px 0;border-top:1px solid var(--line)}
+.week .wtop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.week .wtop>b{font-size:17px;white-space:nowrap}
 .week:first-child{border-top:0;padding-top:0}
 .week .wn{font-weight:800}.week .wr{font-size:13px;color:var(--tx2)}
 .week .wh{text-align:right}.week .wh b{font-size:17px}
-.week .tags{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;margin-top:3px}
+.week .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 /* puces de mois */
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin:0 -16px;padding-left:16px;padding-right:16px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -371,7 +374,7 @@ const Engine = (() => {
     tauxHoraire: 12.61,
     heuresMensuelles: 151.67,
     planning: [[], [], W, W, W, W, W], // dim, lun, mar … sam
-    hs: { seuil25: 35, seuil50: 43, maj25: 25, maj50: 50 },
+    hs: { seuil25: 35, seuil50: 43, maj25: 25, maj50: 50, reposEnHS: true },
     majDimanche: 0, majFerie: 0, maj1erMai: 100,
     tickets: { actif: true, valeur: 7, partEmployeur: 60 },
     cotis: { vieillessePlaf: 6.90, vieillesseDeplaf: 0.40, t1: 4.01, t2: 9.72, cet: 0.14, csgDed: 6.80, csgNd: 2.40, crds: 0.50, abattement: 98.25, reducHS: 11.31 },
@@ -535,22 +538,25 @@ const Engine = (() => {
     }
     // semaines civiles (lundi → dimanche)
     for (let m = start; m <= end; m = addDays(m, 7)) {
-      let eff = 0, paid = 0, unpaid = 0, P = 0, any = false;
+      let eff = 0, paid = 0, unpaid = 0, P = 0, any = false, rest = 0;
       const list = [];
       for (let i = 0; i < 7; i++) {
         const di = days[addDays(m, i)]; list.push(di);
-        if (di.inC) { any = true; P += di.planMin; }
+        if (di.inC) { any = true; P += di.planMin; if (di.planMin === 0 && di.worked) rest += di.worked; }
         eff += di.worked; paid += di.paidAbs; unpaid += di.unpaid;
       }
       if (!any) continue;
       const s25 = st.hs.seuil25 * 60, s50 = st.hs.seuil50 * 60;
-      const min25 = Math.max(0, Math.min(eff, s50) - s25), min50 = Math.max(0, eff - s50);
+      // jours de repos travaillés (lundi, dimanche…) : heures sup d'office si l'option est active
+      const forced = st.hs.reposEnHS ? rest : 0;
+      const totHS = forced ? forced + Math.max(0, eff - forced - s25) : Math.max(0, eff - s25);
+      const min50 = Math.min(totHS, Math.max(0, eff - s50)), min25 = totHS - min50;
       const credited = eff + paid + unpaid;
       const minNM = Math.max(0, Math.max(0, credited - P) - min25 - min50);
       const minDef = Math.max(0, P - credited);
       const sunday = addDays(m, 6);
       const ym = payMonth(S, sunday);
-      const w = { monday: m, sunday, num: isoWeek(m), eff, paid, unpaid, P, min25, min50, minNM, minDef, ym, days: list };
+      const w = { monday: m, sunday, num: isoWeek(m), eff, paid, unpaid, P, min25, min50, minNM, minDef, rest, forced, ym, days: list };
       weeks.push(w);
       const M = months[ym];
       if (M) { M.min25 += min25; M.min50 += min50; M.minNM += minNM; M.minDef += minDef; M.weeks.push(w); }
@@ -668,7 +674,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.1';
+const VERSION = '1.2';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -888,7 +894,7 @@ function vHours() {
       const d = +k.slice(8), di = dayOf(k);
       let cls = 'cd', tx = '';
       switch (di.type) {
-        case 'travail': cls += di.confirmed ? ' w' : ' plan'; tx = hShort(di.worked); if (!di.confirmed && k <= t) unc++; break;
+        case 'travail': cls += di.confirmed ? ' w' : ' plan'; if (!di.planMin && di.worked && S.settings.hs.reposEnHS) cls += ' hsday'; tx = hShort(di.worked); if (!di.confirmed && k <= t) unc++; break;
         case 'cp': cls += ' cp'; tx = 'CP'; break;
         case 'ferie': cls += ' ferie'; tx = 'Férié'; break;
         case 'maladie': cls += ' maladie'; tx = 'Mal.'; break;
@@ -904,7 +910,7 @@ function vHours() {
   }
   h += `<div class="card"><div class="mnav"><button class="icbtn" data-a="calPrev">${IC.left}</button><b>${ymLabel(ym)}</b><button class="icbtn" data-a="calNext">${IC.right}</button></div>
     <div class="cal">${cal}</div>
-    <div class="legend"><span><i style="background:var(--goldbg);border:1px solid var(--gold)"></i>Saisi</span><span><i style="border:1.5px dashed var(--tx3)"></i>Prévu</span><span><i style="background:rgba(100,210,255,.4)"></i>Congé</span><span><i style="background:rgba(191,90,242,.4)"></i>Férié</span><span><i style="background:var(--green);border-radius:50%"></i>Heures en plus</span></div>
+    <div class="legend"><span><i style="background:var(--goldbg);border:1px solid var(--gold)"></i>Saisi</span><span><i style="border:1.5px dashed var(--tx3)"></i>Prévu</span><span><i style="background:rgba(100,210,255,.4)"></i>Congé</span><span><i style="background:rgba(191,90,242,.4)"></i>Férié</span><span><i style="background:var(--green);border-radius:50%"></i>Heures en plus</span>${S.settings.hs.reposEnHS ? '<span><i style="background:rgba(50,215,75,.35)"></i>Repos travaillé = HS</span>' : ''}</div>
     ${unc ? `<div class="btns" style="margin-top:14px"><button class="btn pri" data-a="confirmMonth" data-ym="${ym}">${IC.check} Confirmer ${unc} jour${unc > 1 ? 's' : ''} passé${unc > 1 ? 's' : ''}</button></div>` : ''}
   </div>`;
 
@@ -923,16 +929,18 @@ function vHours() {
       const tags = [];
       if (w.min25) tags.push(`<span class="badge g">+${hm(w.min25)} à ${S.settings.hs.maj25} %</span>`);
       if (w.min50) tags.push(`<span class="badge g">+${hm(w.min50)} à ${S.settings.hs.maj50} %</span>`);
+      if (w.forced) tags.push(`<span class="badge g">dont ${hm(w.forced)} sur un jour de repos</span>`);
       if (w.minNM) tags.push(`<span class="badge">+${hm(w.minNM)} normales</span>`);
       if (w.minDef) tags.push(`<span class="badge o">−${hm(w.minDef)} manquantes</span>`);
       if (w.paid) tags.push(`<span class="badge b">${hm(w.paid)} payées non travaillées</span>`);
-      h += `<div class="week"><div><div class="wn">Semaine ${w.num}${w.monday === E.mondayOf(t) ? ' <span class="badge">en cours</span>' : ''}</div><div class="wr">${dShort(w.monday)} → ${dShort(w.sunday)}${w.ym !== ym ? ' · payée en ' + ymMonth(w.ym) : ''}</div></div>
-        <div class="wh"><b class="num">${hm(w.eff)}</b><div class="tags">${tags.join('')}</div></div></div>`;
+      h += `<div class="week"><div class="wtop"><div><div class="wn">Semaine ${w.num}${w.monday === E.mondayOf(t) ? ' <span class="badge">en cours</span>' : ''}</div><div class="wr">${dShort(w.monday)} → ${dShort(w.sunday)}${w.ym !== ym ? ' · payée en ' + ymMonth(w.ym) : ''}</div></div>
+        <b class="num">${hm(w.eff)}</b></div>${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}</div>`;
     });
     h += '</div>';
   }
   h += `<div class="card"><details><summary>Comment sont comptées les heures sup ?</summary><div class="help">
     <p>Par <b>semaine civile</b> (lundi → dimanche), comme sur ton bulletin (« HS semaine 39 »). Au-delà de ${S.settings.hs.seuil25} h de travail effectif : +${S.settings.hs.maj25} % jusqu'à ${S.settings.hs.seuil50} h, puis +${S.settings.hs.maj50} %.</p>
+    ${S.settings.hs.reposEnHS ? '<p><b>Jour de repos travaillé</b> (lundi, dimanche…) : toutes ces heures sont des heures sup, même si la semaine fait moins de ' + S.settings.hs.seuil25 + ' h. Réglable dans Réglages → Contrat.</p>' : ''}
     <p>Les congés et jours fériés ne comptent pas comme travail effectif pour le seuil. Si tu fais des heures en plus une semaine avec un férié, elles sont payées au taux normal tant que tu ne dépasses pas ${S.settings.hs.seuil25} h effectives.</p>
     <p>Une semaine est payée sur le bulletin du mois où tombe son dimanche${+S.settings.clotureJour ? ` (clôture le ${S.settings.clotureJour})` : ''}. Réglable dans Réglages → Paie.</p></div></details></div>`;
   return h;
@@ -1093,7 +1101,8 @@ function vSettings(embedded) {
     ${fNum('tauxHoraire', 'Taux horaire brut', '€ / heure')}${fNum('heuresMensuelles', 'Heures mensualisées', '35 h × 52 / 12')}
     <div class="fld"><label>Salaire de base</label><b class="num">${eur(full)}</b></div>
     ${fNum('hs.seuil25', 'Heures sup à partir de', 'heures par semaine')}${fNum('hs.maj25', 'Majoration 1res heures sup', '% (jusqu\'au 2e seuil)')}
-    ${fNum('hs.seuil50', '2e seuil', 'heures par semaine')}${fNum('hs.maj50', 'Majoration au-delà', '%')}</div>`;
+    ${fNum('hs.seuil50', '2e seuil', 'heures par semaine')}${fNum('hs.maj50', 'Majoration au-delà', '%')}
+    ${fSw('hs.reposEnHS', 'Jour de repos travaillé = heures sup', 'lundi, dimanche… comptés en HS même si la semaine fait moins de ' + st.hs.seuil25 + ' h')}</div>`;
 
   const order = [1, 2, 3, 4, 5, 6, 0];
   let tot = 0;
@@ -1172,6 +1181,7 @@ function sheetDay() {
     <div class="seg types">${types.map(t => `<button data-a="dType" data-v="${t[0]}" class="${draft.type === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>`;
   if (draft.type === 'travail') {
     h += `<div class="sec"><div class="lb">Plages horaires</div><div class="slots">${draft.seg.map((s, i) => `<div class="slot"><input type="time" data-slot="${i}" data-p="0" value="${s[0] || ''}"><span class="ar">→</span><input type="time" data-slot="${i}" data-p="1" value="${s[1] || ''}"><button class="del" data-a="dDel" data-i="${i}" aria-label="Supprimer">${IC.x}</button></div>`).join('') || '<div class="empty">Aucune plage : 0 h travaillée</div>'}</div>
+      ${!plan.length && S.settings.hs.reposEnHS ? '<p class="tiny" style="margin-top:8px;color:var(--green);font-weight:700">Jour de repos : toutes ces heures comptent en heures sup (+' + S.settings.hs.maj25 + ' %).</p>' : ''}
       <div class="qk"><button data-a="dAdd">+ Plage</button><button data-a="dQuick" data-v="plan">Horaire prévu</button><button data-a="dQuick" data-v="-15">−15 min</button><button data-a="dQuick" data-v="15">+15 min</button><button data-a="dQuick" data-v="30">+30 min</button><button data-a="dQuick" data-v="60">+1 h</button></div></div>
       <div class="sec"><div class="lb">Ticket restaurant</div><div class="seg">${[['auto', 'Auto'], ['oui', 'Oui'], ['non', 'Non']].map(o => `<button data-a="dTicket" data-v="${o[0]}" class="${draft.ticket === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div><p class="tiny" style="margin-top:6px" id="dTick"></p></div>`;
   } else {
@@ -1195,8 +1205,9 @@ function refreshDayTotals() {
   const { k, draft } = ui.sheet, di = dayOf(k);
   const w = draft.type === 'travail' ? E.sumSeg(draft.seg) : 0;
   const diff = draft.type === 'travail' ? w - di.planMin : 0;
+  const hsTag = draft.type === 'travail' && !di.planMin && w && S.settings.hs.reposEnHS ? ' HS' : '';
   const el = document.getElementById('dTot');
-  if (el) el.innerHTML = `<span class="muted">${draft.type === 'travail' ? 'Total du jour' : TYPES[draft.type === 'repos' && di.hol ? 'ferie' : draft.type]}</span><span><b class="num">${hm(w)}</b> ${diff ? `<span class="badge ${diff > 0 ? 'g' : 'o'}">${diff > 0 ? '+' : ''}${hm(diff)}</span>` : ''}</span>`;
+  if (el) el.innerHTML = `<span class="muted">${draft.type === 'travail' ? 'Total du jour' : TYPES[draft.type === 'repos' && di.hol ? 'ferie' : draft.type]}</span><span><b class="num">${hm(w)}</b> ${diff ? `<span class="badge ${diff > 0 ? 'g' : 'o'}">${diff > 0 ? '+' : ''}${hm(diff)}${hsTag}</span>` : ''}</span>`;
   const tk = document.getElementById('dTick');
   if (tk) { const el2 = E.ticketEligible(draft.seg); tk.textContent = draft.ticket === 'auto' ? (el2 ? 'Journée entière : 1 ticket.' : 'Pas de journée entière : pas de ticket.') : ''; }
 }
