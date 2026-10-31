@@ -282,8 +282,8 @@ select.inp{-webkit-appearance:none;appearance:none}
 .paybanner{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;padding:14px;margin-bottom:12px;border-radius:18px;border:1px solid var(--gold);background:linear-gradient(120deg,var(--goldbg),rgba(255,255,255,.03));animation:pulse 2.2s ease-in-out infinite}
 .paybanner .pe{font-size:30px}.paybanner .go{margin-left:auto;font-weight:800;color:var(--gold);white-space:nowrap}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(230,189,106,.0)}50%{box-shadow:0 0 0 6px rgba(230,189,106,.18)}}
-.slot{position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s}
-.slot.on{opacity:1}
+.slotm{position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s}
+.slotm.on{opacity:1}
 .sl-box{width:100%;max-width:380px;border-radius:28px;padding:22px 16px 18px;background:linear-gradient(180deg,#3a2a0e,#1b1307 60%,#120d05);border:2px solid #e6bd6a;box-shadow:0 0 0 6px rgba(230,189,106,.15),0 30px 80px rgba(0,0,0,.6),inset 0 2px 0 rgba(255,255,255,.15);text-align:center;color:#fff}
 .sl-top{font-weight:900;letter-spacing:.14em;font-size:14px;color:#f6d68c;margin-bottom:14px}
 .sl-reels{display:flex;justify-content:center;align-items:center;gap:4px;background:#0b0905;border-radius:16px;padding:12px 8px;box-shadow:inset 0 4px 14px rgba(0,0,0,.8),inset 0 0 0 1px rgba(230,189,106,.35)}
@@ -291,9 +291,9 @@ select.inp{-webkit-appearance:none;appearance:none}
 .strip{display:flex;flex-direction:column}.strip i{display:block;height:56px;line-height:56px;font-style:normal;font-size:38px;font-weight:900;color:#1a1306;font-variant-numeric:tabular-nums}
 .sep{font-size:34px;font-weight:900;color:#f6d68c;min-width:8px;flex:0 0 auto}.sep.eur{margin-left:6px}
 .sl-lights{display:flex;justify-content:space-between;margin:14px 6px 4px}.sl-lights i{width:9px;height:9px;border-radius:50%;background:#6b5420}
-.slot .sl-lights i{animation:blink .5s infinite alternate}.slot .sl-lights i:nth-child(2n){animation-delay:.25s}
+.slotm .sl-lights i{animation:blink .5s infinite alternate}.slot .sl-lights i:nth-child(2n){animation-delay:.25s}
 @keyframes blink{to{background:#ffe7a3;box-shadow:0 0 10px #ffd36b}}
-.slot.win .sl-box{animation:winpulse .6s ease 3}
+.slotm.win .sl-box{animation:winpulse .6s ease 3}
 @keyframes winpulse{50%{transform:scale(1.04);box-shadow:0 0 0 10px rgba(230,189,106,.35),0 30px 80px rgba(0,0,0,.6)}}
 .sl-verdict{min-height:64px;display:flex;flex-direction:column;gap:4px;margin-top:10px}.sl-verdict b{font-size:24px;font-weight:900;color:#f6d68c}.sl-verdict span{font-size:14px;color:rgba(255,255,255,.75);line-height:1.4}
 .sl-ok{margin-top:12px;width:100%;transition:opacity .3s}
@@ -881,7 +881,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.6';
+const VERSION = '1.6.1';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -2843,7 +2843,7 @@ function slotMachine(ym, net) {
   closeSheet();
   const M = R.months[ym], est = M ? M.pay.net : null, d = est != null ? r2(net - est) : null, exact = d != null && Math.abs(d) < 0.005;
   const txt = n2(net), chars = [...txt];
-  const el = document.createElement('div'); el.className = 'slot'; el.id = 'slot';
+  const el = document.createElement('div'); el.className = 'slotm'; el.id = 'slot';
   let di = 0;
   el.innerHTML = `<div class="sl-box"><div class="sl-top">🎰 PAIE ${ymLabel(ym).toUpperCase()}</div>
     <div class="sl-reels">${chars.map(ch => /\d/.test(ch) ? `<span class="reel"><span class="strip" data-d="${ch}" data-i="${di++}">${Array.from({ length: 31 }, (_, i) => `<i>${i % 10}</i>`).join('')}</span></span>` : `<span class="sep">${ch === ' ' || ch === ' ' ? '&nbsp;' : ch}</span>`).join('')}<span class="sep eur">€</span></div>
