@@ -206,6 +206,18 @@ details[open] summary::after{content:" ⌄"}
 .sheet .sh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px}
 .sheet .sec{margin-top:16px}
 .bsec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.sigbox{display:flex;align-items:center;justify-content:center;background:#fff;border-radius:12px;padding:6px 10px;color:#14286b;border:1px solid var(--line);min-height:62px}
+.sigbox.off{opacity:.35;filter:grayscale(1)}
+.sigrow{display:flex;gap:10px;align-items:center}
+.sigprev{max-width:100%;height:auto;display:block}
+.sigpad{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom))}
+.sp-box{width:min(760px,100%);background:var(--bg2);border:1px solid var(--line);border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.sp-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sp-zone{position:relative;height:min(46vw,300px);min-height:150px;border-radius:16px;background:var(--card);border:1px dashed var(--line);overflow:hidden;touch-action:none}
+.sp-zone canvas{position:absolute;inset:0;touch-action:none}
+.sp-line{position:absolute;left:8%;right:8%;bottom:26%;border-bottom:1.5px solid var(--line);pointer-events:none}
+.sp-x{position:absolute;left:8%;bottom:calc(26% + 4px);color:var(--tx2);font-size:14px;pointer-events:none}
+@media (orientation:landscape) and (max-height:500px){.sp-zone{height:58vh}}
 .bsec>.lb{font-size:12px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 .sheet .sec>.lb{font-size:12px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
 /* toast */
@@ -447,6 +459,8 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     societe: 'Cerdagne Meubles SAS',
     adresseEmployeur: '2 rue des Isards, 66800 Saillagouse',
     destinataire: 'La Direction',
+    emailEmployeur: '',
+    signature: null,
     ville: 'Saillagouse',
     contrat: { debut: '2026-10-01', fin: '2027-03-27', type: 'CDD' },
     tauxHoraire: 12.61,
@@ -458,6 +472,9 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     cotis: { vieillessePlaf: 6.90, vieillesseDeplaf: 0.40, t1: 4.01, t2: 9.72, cet: 0.14, csgDed: 6.80, csgNd: 2.40, crds: 0.50, abattement: 98.25, reducHS: 11.31 },
     pass: 4005,
     prevoyancePatronale: 83.20,
+    baremeAuto: true,       // taux, plafond et SMIC tirés du barème officiel daté (actualisé par le relais)
+    smicPlancher: true,     // jamais en dessous du SMIC en vigueur
+    tauxHist: [],           // augmentations : [{ du: 'AAAA-MM-JJ', taux }]
     mutuelleSalarie: 0,
     pas: 0,
     clotureJour: 26,
@@ -475,10 +492,57 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     lock: { mode: 'off', pinHash: '', salt: '', cred: '', want: '' },
     finContrat: { precarite: true, inclureCP: true },
     theme: 'dark',
-    schema: 2,
+    schema: 3,
     github: { owner: '', repo: '', branch: 'main', path: 'centime-data.json', token: '', auto: false, last: null },
   });
-  const newState = () => ({ v: 1, settings: defaults(), days: {}, months: {}, requests: [], badges: {}, fx: {}, clock: null });
+  const newState = () => ({ v: 1, settings: defaults(), days: {}, months: {}, requests: [], badges: {}, fx: {}, clock: null, bareme: null });
+
+  /* ---------- barème officiel daté (modèle URSSAF « modele-social », mon-entreprise.urssaf.fr) ---------- */
+  // Valeurs intégrées à l'appli ; le relais vérifie chaque nuit les valeurs officielles et les ajoute dans S.bareme.entries.
+  // Chaque mois de paie utilise les valeurs en vigueur le 1er du mois : les mois passés ne bougent jamais.
+  const BAREME = [
+    { du: '2024-01-01', smic: 11.65, pass: 3864, vPlaf: 6.90, vDeplaf: 0.40, rcT1: 3.15, rcT2: 8.64, cegT1: 0.86, cegT2: 1.08, cet: 0.14, csgDed: 6.80, csgNd: 2.40, crds: 0.50, abatt: 98.25 },
+    { du: '2024-11-01', smic: 11.88 },
+    { du: '2025-01-01', pass: 3925 },
+    { du: '2026-01-01', smic: 12.02, pass: 4005 },
+    { du: '2026-06-01', smic: 12.31 },
+  ];
+  const BFIELDS = ['smic', 'pass', 'vPlaf', 'vDeplaf', 'rcT1', 'rcT2', 'cegT1', 'cegT2', 'cet', 'csgDed', 'csgNd', 'crds', 'abatt'];
+  const BRANGE = { smic: [9, 25], pass: [3000, 8000], vPlaf: [3, 12], vDeplaf: [0, 3], rcT1: [1, 8], rcT2: [4, 15], cegT1: [0, 3], cegT2: [0, 4], cet: [0, 1], csgDed: [4, 10], csgNd: [1, 5], crds: [0, 2], abatt: [90, 100] };
+  function cleanEntry(e) {
+    if (!e || !/^\d{4}-\d\d-\d\d$/.test(e.du || '')) return null;
+    const o = { du: e.du };
+    BFIELDS.forEach(f => { const v = +e[f]; if (e[f] != null && isFinite(v) && v >= BRANGE[f][0] && v <= BRANGE[f][1]) o[f] = v; });
+    return Object.keys(o).length > 1 ? o : null;
+  }
+  function baremeAt(S, k) {
+    const ext = ((S && S.bareme && S.bareme.entries) || []).map(cleanEntry).filter(Boolean);
+    const list = BAREME.concat(ext).filter(e => e.du <= k).sort((a, b) => a.du < b.du ? -1 : a.du > b.du ? 1 : 0);
+    const out = { du: null, officiel: ext.some(e => e.du <= k) };
+    BFIELDS.forEach(f => { out[f] = BAREME[0][f]; });   // avant 2024 : on part des plus anciennes valeurs connues
+    list.forEach(e => { BFIELDS.forEach(f => { if (e[f] != null) out[f] = e[f]; }); out.du = e.du; });
+    return out;
+  }
+  // taux horaire en vigueur : dernière augmentation saisie, jamais sous le SMIC du moment
+  function rateAt(S, k) {
+    const st = S.settings;
+    const hist = (st.tauxHist || []).filter(x => x && x.du && x.du <= k && +x.taux > 0).sort((a, b) => a.du < b.du ? -1 : a.du > b.du ? 1 : 0);
+    const perso = hist.length ? +hist[hist.length - 1].taux : +st.tauxHoraire;
+    const smic = st.smicPlancher === false ? 0 : (baremeAt(S, k).smic || 0);
+    return { taux: Math.max(perso, smic), perso, smic, auSmic: smic > perso };
+  }
+  // réglages effectifs d'un mois de paie (barème + taux du mois)
+  function settingsFor(S, ym) {
+    const st = S.settings, k = ym + '-01', B = baremeAt(S, k), rate = rateAt(S, k), s = Object.assign({}, st);
+    if (st.baremeAuto !== false) {
+      const q = x => Math.round(x * 1000) / 1000;
+      s.pass = B.pass;
+      s.cotis = Object.assign({}, st.cotis, { vieillessePlaf: B.vPlaf, vieillesseDeplaf: B.vDeplaf, t1: q(B.rcT1 + B.cegT1), t2: q(B.rcT2 + B.cegT2), cet: B.cet,
+        csgDed: B.csgDed, csgNd: B.csgNd, crds: B.crds, abattement: B.abatt, reducHS: 11.31 });
+    }
+    s.tauxHoraire = rate.taux;
+    return { s, B, rate };
+  }
 
   /* ---------- journée ---------- */
   function dayInfo(S, k) {
@@ -555,7 +619,7 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
 
     // lignes façon bulletin
     const add = (g, label, base, taux, montant, cls) => L.push({ g, label, base, taux, montant, cls });
-    add('rem', 'Salaire de base', st.heuresMensuelles, taux, I.base);
+    add('rem', 'Salaire de base' + (I.auSmic ? ' (relevé au SMIC)' : ''), st.heuresMensuelles, taux, I.base);
     if (I.absDed) add('rem', 'Absence non rémunérée', I.hAbs, null, -I.absDed, 'neg');
     if (I.defDed) add('rem', 'Heures manquantes', I.hDef, null, -I.defDed, 'neg');
     if (I.h25) add('rem', 'Heures supplémentaires ' + st.hs.maj25 + ' %', I.h25, t25, m25, 'hs');
@@ -663,19 +727,21 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
       const M = months[ym];
       if (M) { M.min25 += min25; M.min50 += min50; M.minNM += minNM; M.minDef += minDef; M.weeks.push(w); }
     }
-    // paie de chaque mois
-    const full = r2(st.tauxHoraire * st.heuresMensuelles);
+    // paie de chaque mois, avec le barème et le taux horaire en vigueur ce mois-là
     const h = mn => r2(mn / 60);
     Object.values(months).forEach(M => {
+      const ctx = settingsFor(S, M.ym), full = r2(ctx.s.tauxHoraire * st.heuresMensuelles);
       const base = M.planFull && M.planInC !== M.planFull ? r2(full * M.planInC / M.planFull) : full;
       const absDed = M.absRaw ? r2(full * M.absRaw) : 0;
       const defDed = st.deduireManquantes && M.minDef && M.planFull ? r2(full * M.minDef / M.planFull) : 0;
       const mo = S.months[M.ym] || {};
       M.inputs = { base, absDed, hAbs: h(M.unpaid), defDed, hDef: h(M.minDef), h25: h(M.min25), h50: h(M.min50), hNM: h(M.minNM),
-        hSun: h(M.sun), hFer: h(M.fer), hMai: h(M.mai), primes: mo.primes || [], tickets: M.tickets, extras: [] };
-      M.pay = payslip(st, M.inputs);
+        hSun: h(M.sun), hFer: h(M.fer), hMai: h(M.mai), primes: mo.primes || [], tickets: M.tickets, extras: [], auSmic: ctx.rate.auSmic };
+      M.full = full; M.bareme = ctx.B; M.rate = ctx.rate;
+      M.pay = payslip(ctx.s, M.inputs);
     });
-    const R = { days, weeks, months, full, today };
+    let curYm = ymOf(today); if (curYm < ymA) curYm = ymA; if (curYm > ymB) curYm = ymB;
+    const R = { days, weeks, months, full: months[curYm].full, today };
     R.cp = cpCalc(S, R, today);
     R.fin = finContrat(S, R);
     return R;
@@ -735,15 +801,15 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     const precarite = st.finContrat.precarite ? r2(brutContrat * 0.10) : 0;
     const solde = Math.max(0, cp.soldeFin);
     const dixieme = cp.totalFin ? r2((brutContrat + (+st.brutSaisonnier || 0)) * 0.10 * solde / cp.totalFin) : 0;
-    const maintien = r2(solde * R.full / (st.cp.mode === 'ouvres' ? 21.67 : 26));
-    const iccp = st.finContrat.inclureCP ? Math.max(dixieme, maintien) : 0;
     const ymFin = ymOf(st.contrat.fin), M = R.months[ymFin];
+    const maintien = r2(solde * (M ? M.full : R.full) / (st.cp.mode === 'ouvres' ? 21.67 : 26));
+    const iccp = st.finContrat.inclureCP ? Math.max(dixieme, maintien) : 0;
     let final = null;
     if (M) {
       const extras = [];
       if (iccp) extras.push({ label: 'Indemnité compensatrice de congés payés (' + solde + ' j)', montant: iccp });
       if (precarite) extras.push({ label: 'Indemnité de fin de contrat (10 %)', montant: precarite });
-      final = payslip(st, Object.assign({}, M.inputs, { extras }));
+      final = payslip(settingsFor(S, ymFin).s, Object.assign({}, M.inputs, { extras }));
     }
     return { brutContrat, precarite, solde, dixieme, maintien, iccp, final, ymFin,
       joursRestants: Math.max(0, dayDiff(R.today, st.contrat.fin)) };
@@ -763,7 +829,8 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
   }
 
   return { r2, r4, toKey, fromKey, addDays, dow, ymOf, daysInMonth, addMonths, mondayOf, dayDiff, isoWeek, todayKey,
-    holidayName, toMin, segMin, segValid, sumSeg, ticketEligible, defaults, newState, dayInfo, payMonth, payslip, compute, selfTest, SEPT };
+    holidayName, toMin, segMin, segValid, sumSeg, ticketEligible, defaults, newState, dayInfo, payMonth, payslip, compute, selfTest, SEPT,
+    BAREME, BFIELDS, cleanEntry, baremeAt, rateAt, settingsFor };
 })();
 if (typeof module !== 'undefined') module.exports = Engine;
 
@@ -841,6 +908,27 @@ const PDF = (() => {
         api.rect(x, y, size, size, { stroke: [0.45, 0.45, 0.48], lw: 0.8, r: 1.5 });
         if (on) ops.push(`q ${col([0.11, 0.11, 0.12], true)} 1.4 w ${f(x + size * 0.2)} ${f(H - y - size * 0.55)} m ${f(x + size * 0.42)} ${f(H - y - size * 0.78)} l ${f(x + size * 0.82)} ${f(H - y - size * 0.22)} l S Q`);
       },
+      // signature manuscrite : traits normalisés (0 → 1) adoucis en courbes de Bézier, encre bleu nuit
+      ink(sig, x, y, w, h, o = {}) {
+        if (!sig || !sig.strokes || !sig.strokes.length) return;
+        let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
+        sig.strokes.forEach(s => { for (let i = 0; i < s.length; i += 2) { x0 = Math.min(x0, s[i]); x1 = Math.max(x1, s[i]); y0 = Math.min(y0, s[i + 1]); y1 = Math.max(y1, s[i + 1]); } });
+        const r = sig.ratio || 2, bw = Math.max(1e-3, (x1 - x0) * r), bh = Math.max(1e-3, y1 - y0), k = Math.min(w / bw, h / bh);
+        const oy = y + (h - bh * k) / 2, P = (a, b) => [x + (a - x0) * r * k, H - (oy + (b - y0) * k)];
+        const parts = [];
+        sig.strokes.forEach(s => {
+          const pts = []; for (let i = 0; i < s.length; i += 2) pts.push(P(s[i], s[i + 1]));
+          let cur = pts[0]; parts.push(`${f(cur[0])} ${f(cur[1])} m`);
+          if (pts.length === 1) { parts.push(`${f(cur[0] + 0.15)} ${f(cur[1])} l`); return; }
+          for (let i = 1; i < pts.length - 1; i++) {
+            const c = pts[i], m = [(c[0] + pts[i + 1][0]) / 2, (c[1] + pts[i + 1][1]) / 2];
+            parts.push(`${f(cur[0] + 2 / 3 * (c[0] - cur[0]))} ${f(cur[1] + 2 / 3 * (c[1] - cur[1]))} ${f(m[0] + 2 / 3 * (c[0] - m[0]))} ${f(m[1] + 2 / 3 * (c[1] - m[1]))} ${f(m[0])} ${f(m[1])} c`);
+            cur = m;
+          }
+          const L = pts[pts.length - 1]; parts.push(`${f(L[0])} ${f(L[1])} l`);
+        });
+        ops.push(`q ${col(o.color || [0.07, 0.15, 0.42], true)} ${f(o.lw || 1.25)} w 1 J 1 j ${parts.join(' ')} S Q`);
+      },
       width, wrap,
       output(title) {
         const objs = [];
@@ -885,7 +973,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.8';
+const VERSION = '1.9';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -949,6 +1037,13 @@ function hydrate(j) {
   s.settings = merge(s.settings, old);
   // v1.3 : clôture de paie au 26 (déduite du bulletin de septembre) pour les données créées avant
   if (!old.schema) { if (!old.clotureJour) s.settings.clotureJour = 26; s.settings.schema = 2; }
+  // v1.9 : barème officiel automatique, sauf si les taux avaient été modifiés à la main
+  if ((s.settings.schema || 0) < 3) {
+    const d = E.defaults();
+    s.settings.baremeAuto = JSON.stringify(s.settings.cotis) === JSON.stringify(d.cotis) && +s.settings.pass === d.pass;
+    s.settings.schema = 3;
+  }
+  s.bareme = j.bareme && Array.isArray(j.bareme.entries) ? j.bareme : null;
   s.days = j.days || {}; s.months = j.months || {}; s.requests = Array.isArray(j.requests) ? j.requests : []; s.badges = j.badges || {}; s.fx = j.fx || {}; s.clock = j.clock || null; s.onboarded = !!j.onboarded;
   return s;
 }
@@ -1200,7 +1295,9 @@ function vPay() {
     <div class="row"><span class="l">Heures sup nettes exonérées d'impôt</span><span class="v num">${eur(P.hsNetExo)}</span></div>
     <div class="row"><span class="l">Tickets resto · part employeur</span><span class="v num pos">+${eur(P.ticketsPat)}</span></div>
     <div class="row"><span class="l">dont suppression cotis. chômage et maladie</span><span class="v num">${eur(P.evolution)}</span></div>
-    <div class="row"><span class="l">Heures sup du mois</span><span class="v num">${hm(M.min25 + M.min50)}</span></div></div>
+    <div class="row"><span class="l">Heures sup du mois</span><span class="v num">${hm(M.min25 + M.min50)}</span></div>
+    ${M.bareme ? `<button class="row" data-a="baremeOpen" style="width:100%;text-align:left"><span class="l">Barème ${S.settings.baremeAuto === false ? 'saisi à la main' : 'officiel'} du mois</span><span class="v">SMIC ${n2(M.bareme.smic)} € · plafond ${nd(M.bareme.pass)} € ›</span></button>` : ''}
+    ${M.rate && M.rate.auSmic ? `<div class="row"><span class="l">Taux horaire</span><span class="v"><span class="badge o">relevé au SMIC : ${n2(M.rate.taux)} €</span></span></div>` : ''}</div>
     ${P.m25 + P.m50 ? `<div class="eqs" style="margin-top:10px">${equivHtml((P.m25 + P.m50) * (P.brut ? P.netAvantIR / P.brut : 0.78))}</div>` : ''}</div>`;
 
   // primes
@@ -1337,15 +1434,19 @@ function vSettings(embedded) {
     <p class="tiny" style="margin-bottom:10px">Verrouille Centime à l’ouverture (et après 2 min en arrière-plan) : tes salaires restent privés.</p>
     <div class="seg">${[['off', 'Aucun'], ['pin', 'Code'], ['faceid', 'Face ID']].map(o => `<button data-a="lockSet" data-v="${o[0]}" class="${(st.lock.pinHash ? st.lock.mode : 'off') === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div></div>`;
 
-  const full = r2(st.tauxHoraire * st.heuresMensuelles);
+  const full = R ? R.full : r2(st.tauxHoraire * st.heuresMensuelles), rNow = E.rateAt(S, today());
   h += `<div class="card"><h3>Pour tes demandes PDF</h3>
     ${fTxt('nom', 'Nom de famille', 'écrit sur tes demandes', 'Nom')}${fTxt('poste', 'Poste')}
     ${fTxt('destinataire', 'Destinataire', 'ex. Madame la Présidente', 'La Direction')}${fTxt('societe', 'Société')}
-    ${fTxt('adresseEmployeur', 'Adresse de l\'employeur')}${fTxt('ville', 'Fait à')}</div>`;
+    ${fTxt('adresseEmployeur', 'Adresse de l\'employeur')}${fTxt('ville', 'Fait à')}
+    ${fTxt('emailEmployeur', 'E-mail du responsable', 'pour envoyer tes demandes par mail', 'prenom.nom@…', 'email')}
+    <div class="fld" style="display:block"><label>Ta signature<small>gardée sur ce téléphone seulement, jamais dans les sauvegardes</small></label>
+      ${st.signature ? `<div class="sigbox">${sigSvg(st.signature, 220, 64)}</div><div class="btns" style="margin-top:8px"><button class="btn sm" data-a="sigNew">✍️ Refaire</button><button class="btn sm dang" data-a="sigDel">Effacer</button></div>` : '<div class="btns" style="margin-top:8px"><button class="btn sm" data-a="sigNew">✍️ Signer au doigt</button></div>'}</div></div>`;
   h += `<div class="card"><h3>Contrat<span class="r">${esc(st.employeur)}</span></h3>
     ${fDate('contrat.debut', 'Début')}${fDate('contrat.fin', 'Fin')}
-    ${fNum('tauxHoraire', 'Taux horaire brut', '€ / heure')}${fNum('heuresMensuelles', 'Heures mensualisées', '35 h × 52 / 12')}
-    <div class="fld"><label>Salaire de base</label><b class="num">${eur(full)}</b></div>
+    ${fNum('tauxHoraire', 'Taux horaire brut', '€ / heure · celui de ton contrat')}${fNum('heuresMensuelles', 'Heures mensualisées', '35 h × 52 / 12')}
+    <div class="fld"><label>Salaire de base ce mois-ci<small>${rNow.auSmic ? 'taux relevé au SMIC (' + n2(rNow.smic) + ' €)' : 'taux appliqué : ' + n2(rNow.taux) + ' € · SMIC ' + n2(rNow.smic) + ' €'}</small></label><b class="num">${eur(full)}</b></div>
+    ${raiseBlock()}
     ${fNum('hs.seuil25', 'Heures sup à partir de', 'heures par semaine')}${fNum('hs.maj25', 'Majoration 1res heures sup', '% (jusqu\'au 2e seuil)')}
     ${fNum('hs.seuil50', '2e seuil', 'heures par semaine')}${fNum('hs.maj50', 'Majoration au-delà', '%')}
     ${fSw('hs.reposEnHS', 'Jour de repos travaillé = heures sup', 'lundi, dimanche… comptés en HS même si la semaine fait moins de ' + st.hs.seuil25 + ' h')}</div>`;
@@ -1367,11 +1468,8 @@ function vSettings(embedded) {
     ${fNum('prevoyancePatronale', 'Prévoyance patronale', '€ ajoutés à l\'assiette CSG (83,20 sur ton bulletin)')}
     ${fNum('mutuelleSalarie', 'Mutuelle part salariale', '€ / mois · 0 sur ton bulletin')}
     ${fNum('majDimanche', 'Majoration dimanche travaillé', '%')}${fNum('majFerie', 'Majoration jour férié travaillé', '%')}${fNum('maj1erMai', 'Majoration 1er mai', '% (légal : 100 %)')}
-    ${fSw('deduireManquantes', 'Retenir les heures manquantes', 'si une semaine fait moins que prévu sans absence déclarée')}
-    <details><summary>Taux de cotisations (bulletin de septembre 2026)</summary>
-    ${fNum('cotis.vieillessePlaf', 'Retraite Sécu plafonnée', '%')}${fNum('cotis.vieillesseDeplaf', 'Retraite Sécu déplafonnée', '%')}${fNum('cotis.t1', 'Complémentaire T1', '%')}${fNum('cotis.t2', 'Complémentaire T2', '%')}${fNum('cotis.cet', 'CET', '%')}
-    ${fNum('cotis.csgDed', 'CSG déductible', '%')}${fNum('cotis.csgNd', 'CSG non déductible', '%')}${fNum('cotis.crds', 'CRDS', '%')}${fNum('cotis.abattement', 'Assiette CSG', '% du brut')}${fNum('cotis.reducHS', 'Réduction salariale HS', '%')}${fNum('pass', 'Plafond Sécu mensuel', '€')}
-    <div class="btns" style="margin-top:10px"><button class="btn sm" data-a="resetCotis">Revenir aux taux du bulletin</button></div></details></div>`;
+    ${fSw('deduireManquantes', 'Retenir les heures manquantes', 'si une semaine fait moins que prévu sans absence déclarée')}</div>`;
+  h += baremeCard();
 
   h += `<div class="card"><h3>Congés & fin de contrat</h3>
     ${fSel('cp.mode', 'Décompte des congés', '', [['ouvrables', 'Jours ouvrables'], ['ouvres', 'Jours ouvrés']])}
@@ -1534,7 +1632,7 @@ function newReq(type) {
   const t = today(), st = S.settings;
   let from = t < st.contrat.debut ? st.contrat.debut : t;
   const nx = isWorkday(from) ? from : nextWorkday(from) || from;
-  const q = { id: 'r' + Date.now().toString(36), type: type || 'cp', from: nx, to: nx, partial: false, hStart: '15:00', hEnd: '19:00', motif: 'rdv', motifTxt: '', paid: false, comment: '', status: 'brouillon', created: t, applied: false };
+  const q = { id: 'r' + Date.now().toString(36), type: type || 'cp', from: nx, to: nx, partial: false, hStart: '15:00', hEnd: '19:00', motif: 'rdv', motifTxt: '', paid: false, comment: '', status: 'brouillon', created: t, applied: false, signed: !!S.settings.signature };
   if (q.type === 'echange') setEchangeDefaults(q);
   return q;
 }
@@ -1682,12 +1780,16 @@ function buildReqPdf(q) {
   });
   y += bh + 22;
   // signatures
-  const bw = (W - 2 * M - 16) / 2, sh = 104;
+  const sig = q.signed && st.signature && st.signature.strokes && st.signature.strokes.length ? st.signature : null;
+  const bw = (W - 2 * M - 16) / 2, sh = sig ? 124 : 104;
   if (y + sh > 798) { d.page(); y = 60; }
   [[M, 'LE SALARIÉ'], [M + bw + 16, 'RÉPONSE DE L’EMPLOYEUR']].forEach(([x, t], i) => {
     d.rect(x, y, bw, sh, { stroke: [0.82, 0.82, 0.85], lw: 0.7, r: 8 });
     d.text(x + 14, y + 19, t, { bold: true, size: 8.5, color: grey });
-    if (!i) { d.text(x + 14, y + 37, name, { size: 10, bold: true }); d.text(x + 14, y + 55, 'Date : ' + dNum(today()), { size: 9.5, color: grey }); d.text(x + 14, y + 73, 'Signature :', { size: 9.5, color: grey }); }
+    if (!i) {
+      d.text(x + 14, y + 37, name, { size: 10, bold: true }); d.text(x + 14, y + 55, 'Date : ' + dNum(today()), { size: 9.5, color: grey }); d.text(x + 14, y + 73, 'Signature :', { size: 9.5, color: grey });
+      if (sig) d.ink(sig, x + 18, y + 78, bw - 36, sh - 86);
+    }
     else { d.check(x + 14, y + 29, 10, false); d.text(x + 30, y + 38, 'Accordée', { size: 10 }); d.check(x + 100, y + 29, 10, false); d.text(x + 116, y + 38, 'Refusée', { size: 10 }); d.text(x + 14, y + 59, 'Date :', { size: 9.5, color: grey }); d.text(x + 14, y + 77, 'Signature :', { size: 9.5, color: grey }); }
   });
   d.line(M, 810, W - M, 810, { color: [0.9, 0.9, 0.92] });
@@ -1748,8 +1850,14 @@ function sheetReq() {
   }
   h += rSec('Message à ajouter (facultatif)', `<textarea class="inp" data-r="comment" rows="3" maxlength="400" placeholder="Ex. : je reste joignable si besoin.">${esc(q.comment)}</textarea>`);
   if (!st.nom) h += rSec('Ton nom (écrit sur le PDF)', `<input class="inp" data-sset="nom" placeholder="Nom de famille" value="">`);
+  h += rSec('Signature', st.signature
+    ? `<div class="sigrow"><div class="sigbox${q.signed ? '' : ' off'}">${sigSvg(st.signature, 180, 54)}</div><div class="btns" style="flex-direction:column;gap:6px;flex:1"><button class="btn sm ${q.signed ? 'pri' : ''}" data-a="rSign">${q.signed ? '✓ Signée' : 'Signer cette demande'}</button><button class="btn sm" data-a="sigNew">✍️ Refaire</button></div></div>`
+    : `<p class="tiny">Signe une fois avec ton doigt : Centime garde ta signature sur ce téléphone et l’ajoute à tes demandes.</p><div class="btns" style="margin-top:8px"><button class="btn" data-a="sigNew">✍️ Signer au doigt</button></div>`);
+  h += rSec('Envoyer à', `<input class="inp" type="email" data-sset="emailEmployeur" placeholder="E-mail de ton responsable (facultatif)" value="${esc(st.emailEmployeur || '')}" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <p class="tiny" style="margin-top:6px">« Envoyer par mail » ouvre le menu Partager : choisis <b>Mail</b>, le PDF${q.signed && st.signature ? ' signé' : ''} est déjà joint.${st.emailEmployeur ? ' <button class="btn sm ghost" data-a="copyMailTo">Copier l’adresse</button>' : ''}</p>`);
   h += `<div class="sec"><div class="lb">Récapitulatif</div><div class="card reqsum" id="reqSum"></div></div>
-    <div class="btns" style="margin-top:14px"><button class="btn pri" data-a="rPdf">${IC.doc} Créer le PDF à imprimer</button></div>
+    <div class="btns" style="margin-top:14px"><button class="btn pri" data-a="rMail">📧 Envoyer par mail</button></div>
+    <div class="btns" style="margin-top:8px"><button class="btn" data-a="rPdf">${IC.doc} PDF à imprimer</button></div>
     <div class="btns" style="margin-top:8px"><button class="btn" data-a="rSave">Enregistrer</button>${saved ? '<button class="btn dang" data-a="rDel">Supprimer</button>' : ''}</div>`;
   if (saved) h += rSec('Suivi de la demande', `<div class="seg">${Object.entries(REQ_STATUS).map(([k, v]) => `<button data-a="rStatus" data-v="${k}" class="${q.status === k ? 'on' : ''}">${v[0]}</button>`).join('')}</div>
     <p class="tiny" style="margin-top:8px">Quand elle est acceptée, Centime la pose dans ton calendrier et recalcule ta paie et tes congés.</p>
@@ -1873,7 +1981,7 @@ function ghFetch(g, method, body) {
   return fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
 }
 const ghErr = s => s === 401 ? 'jeton invalide ou expiré' : s === 403 ? 'le jeton n\'a pas le droit d\'écrire (Contents : Read and write)' : s === 404 ? 'dépôt ou branche introuvable' : s === 409 || s === 422 ? 'conflit, réessaie' : 'erreur ' + s;
-function exportData() { const d = clone(S); d.settings.github = Object.assign({}, d.settings.github, { token: '', lastErr: '' }); d.settings.bank = { mode: d.settings.bank.mode, aspsp: d.settings.bank.aspsp, country: d.settings.bank.country }; d.app = 'centime'; d.exportedAt = new Date().toISOString(); return d; }
+function exportData() { const d = clone(S); d.settings.signature = null; d.settings.github = Object.assign({}, d.settings.github, { token: '', lastErr: '' }); d.settings.bank = { mode: d.settings.bank.mode, aspsp: d.settings.bank.aspsp, country: d.settings.bank.country }; d.app = 'centime'; d.exportedAt = new Date().toISOString(); return d; }
 const b64e = str => { const b = new TextEncoder().encode(str); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
 const b64d = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g, '')), c => c.charCodeAt(0)));
 function setSync(state) { sync.state = state; const c = document.getElementById('cloud'); if (c) c.className = 'icbtn ' + state; }
@@ -1920,10 +2028,10 @@ async function ghLoad() {
   } catch (e) { setSync('err'); toast('GitHub : ' + (e.message === 'Failed to fetch' ? 'pas de connexion' : e.message)); }
 }
 function applyImport(d, msg) {
-  const keep = S.settings.github, keepLock = S.settings.lock, keepBank = S.settings.bank;
+  const keep = S.settings.github, keepLock = S.settings.lock, keepBank = S.settings.bank, keepSig = S.settings.signature;
   const s = hydrate(Object.assign({}, d, { onboarded: true }));
   s.settings.github = Object.assign({}, s.settings.github, { owner: keep.owner || s.settings.github.owner, repo: keep.repo || s.settings.github.repo, branch: keep.branch, path: keep.path, token: keep.token, auto: keep.auto });
-  s.settings.lock = keepLock; s.settings.bank = keepBank; S = s; S.onboarded = true;
+  s.settings.lock = keepLock; s.settings.bank = keepBank; s.settings.signature = keepSig; S = s; S.onboarded = true;
   save(false); recompute(); ui.anim = true; render(); toast(msg);
 }
 async function exportFile() {
@@ -2154,7 +2262,7 @@ function todayEarn() {
   const before = w ? w.days.filter(d => d.k < t).reduce((a, d) => a + d.worked, 0) : 0;
   const s25 = S.settings.hs.seuil25 * 60, restHS = di.planMin === 0 && S.settings.hs.reposEnHS;
   const normal = restHS ? 0 : Math.max(0, Math.min(min, s25 - before)), hs = min - normal;
-  const rate = S.settings.tauxHoraire * ratio;
+  const rate = E.rateAt(S, t).taux * ratio;
   return { min, live, hs, euros: (normal + hs * (1 + S.settings.hs.maj25 / 100)) * rate / 60, perMin: (hs > 0 ? 1 + S.settings.hs.maj25 / 100 : 1) * rate / 60 };
 }
 function earnHtml() {
@@ -2175,7 +2283,7 @@ function expressHint(di) {
 // heures sup déjà faites (semaines commencées), converties en net estimé
 function hsNetCumul() {
   const t = today(), st = S.settings, P = R.months[contractYm(E.ymOf(t))].pay, ratio = P.brut ? P.netAvantIR / P.brut : 0.78;
-  return R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + (w.min25 * (1 + st.hs.maj25 / 100) + w.min50 * (1 + st.hs.maj50 / 100)) / 60 * st.tauxHoraire * ratio, 0);
+  return R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + (w.min25 * (1 + st.hs.maj25 / 100) + w.min50 * (1 + st.hs.maj50 / 100)) / 60 * E.rateAt(S, w.monday).taux * ratio, 0);
 }
 function savings() {
   const ep = S.settings.epargne || {}; if (!ep.actif) return null;
@@ -2288,7 +2396,7 @@ function fxAfter(prev) {
   const gained = R.weeks.reduce((a, w) => a + Math.max(0, (w.min25 + w.min50) - (prev[w.monday] || 0)), 0);
   if (gained > 0 && Object.keys(prev).length) {
     const P = R.months[contractYm(E.ymOf(today()))].pay, ratio = P.brut ? P.netAvantIR / P.brut : 0.78;
-    celebrate(`💰 +${hm(gained)} d’heures sup · ≈ +${eur(gained / 60 * S.settings.tauxHoraire * (1 + S.settings.hs.maj25 / 100) * ratio)} net`);
+    celebrate(`💰 +${hm(gained)} d’heures sup · ≈ +${eur(gained / 60 * E.rateAt(S, today()).taux * (1 + S.settings.hs.maj25 / 100) * ratio)} net`);
   }
   checkBadges(true);
 }
@@ -2325,7 +2433,7 @@ function stats() {
   const hsMin = R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + w.min25 + w.min50, 0);
   return {
     hours, days, longest, earliest, mondays, best, hsMin,
-    hsBrut: R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + (w.min25 * (1 + st.hs.maj25 / 100) + w.min50 * (1 + st.hs.maj50 / 100)) / 60 * st.tauxHoraire, 0), hsNet: hsNetCumul(),
+    hsBrut: R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + (w.min25 * (1 + st.hs.maj25 / 100) + w.min50 * (1 + st.hs.maj50 / 100)) / 60 * E.rateAt(S, w.monday).taux, 0), hsNet: hsNetCumul(),
     tickets: past.reduce((a, m) => a + m.tickets, 0),
     ticketsPat: past.reduce((a, m) => a + m.pay.ticketsPat, 0),
     net: past.reduce((a, m) => a + m.pay.net, 0),
@@ -2648,7 +2756,7 @@ async function ghSetup() {
 /* ---------- après l'écran de chargement ---------- */
 function afterSplash() {
   if (lockOn()) showLock();
-  if (!pushLaunch()) setTimeout(bankAuto, lockOn() ? 4000 : 800);
+  if (!pushLaunch() && !baremeLaunch()) setTimeout(bankAuto, lockOn() ? 4000 : 800);
   if (!S.onboarded) { welcome(); return; }
   const t = today(), ym = E.ymOf(t);
   if (payDate(ym) === t && (S.fx || {}).payday !== ym && t >= S.settings.contrat.debut && t <= E.addDays(S.settings.contrat.fin, 31)) {
@@ -3031,6 +3139,7 @@ function bankAuto() {
   const B = bankCfg();
   if (B.account && Date.now() - Math.max(B.lastSync || 0, B.lastTry || 0) > 30 * 60e3 && navigator.onLine !== false) { B.lastTry = Date.now(); save(false); bankSync(false); }
   pushRefresh(false);
+  baremeSync(false);
 }
 
 /* ----- notifications : salaire tombé (vérifié par le relais 3 fois par jour, même appli fermée) ----- */
@@ -3215,6 +3324,244 @@ document.addEventListener('change', async e => {
   try { await importKey(txt); bankCfg().privateKey = txt.trim(); bankCfg().lastErr = ''; save(false); render(); toast('🔑 Clé privée enregistrée sur ce téléphone'); }
   catch (x) { toast('Clé illisible : ' + x.message); }
   el.value = '';
+});
+
+/* ============================================================
+   CENTIME 1.9 — barème officiel automatique + signature au doigt
+   ============================================================ */
+
+/* ----- barème officiel : SMIC, plafond Sécu, taux (relevés chaque nuit par le relais sur le modèle de l'Urssaf) ----- */
+const relayBase = () => (bankCfg().relayUrl || '').trim().replace(/\/$/, '');
+const BLAB = { smic: 'SMIC horaire', pass: 'Plafond Sécu', vPlaf: 'Retraite de base', vDeplaf: 'Retraite déplafonnée', rcT1: 'Retraite complémentaire', cegT1: 'CEG', csgDed: 'CSG déductible', csgNd: 'CSG non déductible', crds: 'CRDS', abatt: 'Assiette CSG', rcT2: 'Complémentaire T2', cegT2: 'CEG T2', cet: 'CET' };
+const bVal = (f, x) => x == null ? '—' : f === 'smic' ? n2(x) + ' €' : f === 'pass' ? nd(x) + ' €' : n2(x) + ' %';
+const dFirst = k => (k.slice(8) === '01' ? '1er' : String(+k.slice(8))) + ' ' + MOIS[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4);
+// changements connus entre deux dates : [{ du, diffs: [{ f, avant, apres }] }]
+function baremeChanges(fromK, toK) {
+  const dates = [...new Set(E.BAREME.concat((S.bareme && S.bareme.entries) || []).map(e => e.du))].filter(d => d > fromK && d <= toK).sort();
+  const out = [];
+  dates.forEach(d => {
+    const a = E.baremeAt(S, E.addDays(d, -1)), b = E.baremeAt(S, d);
+    const diffs = E.BFIELDS.filter(f => a[f] != null && b[f] != null && Math.abs(a[f] - b[f]) > 1e-9).map(f => ({ f, avant: a[f], apres: b[f] }));
+    if (diffs.length) out.push({ du: d, diffs });
+  });
+  return out;
+}
+let baremeBusy = null, baremeFail = 0;
+const baremeMsg = impact => '📢 Barème officiel mis à jour' + (impact.length ? ' : ' + impact.length + ' paie' + (impact.length > 1 ? 's recalculées' : ' recalculée') : '');
+const BORDER = ['smic', 'pass', 'vPlaf', 'vDeplaf', 'rcT1', 'cegT1', 'csgDed', 'csgNd', 'crds', 'abatt', 'rcT2', 'cegT2', 'cet'];
+function baremeSync(force) {
+  if (baremeBusy) return baremeBusy;
+  const base = relayBase(), old = S.bareme;
+  if (!base || navigator.onLine === false) return Promise.resolve(null);
+  if (!force && ((old && Date.now() - (old.recu || 0) < 6 * 3600e3) || Date.now() - baremeFail < 10 * 60e3)) return Promise.resolve(null);
+  baremeBusy = (async () => {
+    try {
+      const r = await fetch(base + '/bareme', { cache: 'no-store' });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j || !Array.isArray(j.entries)) throw new Error((j && j.message) || 'réponse ' + r.status);
+      const entries = j.entries.map(E.cleanEntry).filter(Boolean);
+      const sig = JSON.stringify(entries), changed = !old || old.sig !== sig;
+      const avant = changed && R ? Object.fromEntries(Object.values(R.months).map(M => [M.ym, M.pay.net])) : null;
+      S.bareme = { entries, sig, verifie: j.verifie || null, source: j.source || 'Urssaf', recu: Date.now(), err: '', dernier: (old && old.dernier) || null };
+      let impact = [];
+      if (changed) {
+        recompute();
+        impact = avant ? Object.values(R.months).filter(M => avant[M.ym] != null && Math.abs(M.pay.net - avant[M.ym]) >= 0.005).map(M => ({ ym: M.ym, avant: avant[M.ym], apres: M.pay.net })) : [];
+        if (old && old.sig) {
+          S.bareme.dernier = { quand: Date.now(), changements: (j.changements || []).slice(0, 4), impact };
+          toast(baremeMsg(impact));
+        }
+        save(false); render();
+      } else save(false);
+      return { changed, impact, nouveau: !!(old && old.sig) };
+    } catch (e) {
+      baremeFail = Date.now();
+      if (S.bareme) { S.bareme.err = e.message; save(false); }
+      return null;
+    } finally { baremeBusy = null; }
+  })();
+  return baremeBusy;
+}
+// carte Réglages
+function baremeCard() {
+  const st = S.settings, t = today(), B = E.baremeAt(S, t), rt = E.rateAt(S, t), b = S.bareme, auto = st.baremeAuto !== false;
+  const fut = baremeChanges(t, '2099-12-31')[0];
+  const quand = b && b.verifie ? new Date(b.verifie).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : null;
+  const badge = !auto ? '<span class="badge o">manuel</span>' : quand ? '<span class="badge g">✓ officiel</span>' : '<span class="badge">intégré</span>';
+  let h = `<div class="card"><h3>Barème officiel<span class="r">${badge}</span></h3>
+    <p class="tiny" style="margin-bottom:8px">SMIC, plafond de la Sécu et taux de cotisations suivent le modèle officiel de l’Urssaf. ${relayBase() ? 'Le relais le vérifie chaque nuit : si un chiffre change, Centime recalcule tes paies à partir de la bonne date (les mois passés ne bougent pas) et te prévient.' : 'Branche le relais (Connexion Revolut) pour recevoir les mises à jour officielles automatiquement.'}</p>
+    <div class="rows">
+      <div class="row"><span class="l">SMIC horaire</span><span class="v num">${bVal('smic', B.smic)}</span></div>
+      <div class="row"><span class="l">Ton taux horaire</span><span class="v num">${n2(rt.taux)} €${rt.auSmic ? ' <span class="badge o">relevé au SMIC</span>' : ' <span class="pos">✓</span>'}</span></div>
+      <div class="row"><span class="l">Plafond Sécu</span><span class="v num">${bVal('pass', B.pass)} / mois</span></div>
+      <div class="row"><span class="l">Retraite de base</span><span class="v num">${n2(B.vPlaf)} % + ${n2(B.vDeplaf)} %</span></div>
+      <div class="row"><span class="l">Complémentaire + CEG</span><span class="v num">${n2(B.rcT1)} % + ${n2(B.cegT1)} %</span></div>
+      <div class="row"><span class="l">CSG / CRDS</span><span class="v num">${n2(B.csgDed)} + ${n2(B.csgNd)} + ${n2(B.crds)} %</span></div>
+      <div class="row"><span class="l">Prochain changement</span><span class="v">${fut ? dFirst(fut.du) : 'aucun annoncé'}</span></div>
+      <div class="row"><span class="l">Dernière vérification</span><span class="v">${quand || (relayBase() ? 'pas encore' : 'relais non branché')}</span></div></div>
+    ${b && b.err ? `<p class="tiny neg" style="margin-top:6px">Vérification impossible : ${esc(b.err)} (Centime garde les derniers chiffres connus)</p>` : ''}
+    ${b && b.dernier && b.dernier.impact && b.dernier.impact.length ? `<p class="tiny" style="margin-top:8px">📢 Dernière mise à jour le ${new Date(b.dernier.quand).toLocaleDateString('fr-FR')} : ${b.dernier.impact.map(x => ymLabel(x.ym) + ' ' + (x.apres >= x.avant ? '+' : '−') + eur(Math.abs(x.apres - x.avant))).join(' · ')}</p>` : ''}
+    <div class="btns" style="margin-top:10px"><button class="btn sm" data-a="baremeOpen">Détails</button>${relayBase() ? '<button class="btn sm" data-a="baremeNow">🔄 Vérifier</button>' : ''}</div>
+    ${fSw('baremeAuto', 'Mise à jour automatique', 'à garder activée, sauf si ton bulletin utilise d’autres taux')}`;
+  if (!auto) h += `<details open><summary>Taux saisis à la main</summary>
+    ${fNum('cotis.vieillessePlaf', 'Retraite Sécu plafonnée', '%')}${fNum('cotis.vieillesseDeplaf', 'Retraite Sécu déplafonnée', '%')}${fNum('cotis.t1', 'Complémentaire T1', '%')}${fNum('cotis.t2', 'Complémentaire T2', '%')}${fNum('cotis.cet', 'CET', '%')}
+    ${fNum('cotis.csgDed', 'CSG déductible', '%')}${fNum('cotis.csgNd', 'CSG non déductible', '%')}${fNum('cotis.crds', 'CRDS', '%')}${fNum('cotis.abattement', 'Assiette CSG', '% du brut')}${fNum('cotis.reducHS', 'Réduction salariale HS', '%')}${fNum('pass', 'Plafond Sécu mensuel', '€')}
+    <div class="btns" style="margin-top:10px"><button class="btn sm" data-a="resetCotis">Revenir aux taux du bulletin</button></div></details>`;
+  return h + '</div>';
+}
+// augmentations (taux horaire daté)
+function raiseBlock() {
+  const st = S.settings, list = (st.tauxHist || []).slice().sort((a, b) => a.du < b.du ? -1 : 1);
+  return `<div class="fld" style="display:block"><label>Augmentations<small>le nouveau taux s’applique à partir de la date choisie ; avant, rien ne change</small></label>
+    ${list.length ? `<div class="rows" style="margin:8px 0">${list.map(x => `<div class="row"><span class="l">À partir du ${dDate(x.du)}</span><span class="v num">${n2(+x.taux)} € <button class="btn sm ghost dang" data-a="raiseDel" data-du="${x.du}" aria-label="Supprimer">${IC.x}</button></span></div>`).join('')}</div>` : ''}
+    <div style="display:grid;grid-template-columns:1fr 100px auto;gap:8px;margin-top:8px"><input type="date" class="inp" id="raiseDu"><input class="inp num" id="raiseTaux" inputmode="decimal" placeholder="€ / h"><button class="btn sm pri" data-a="raiseAdd">${IC.plus}</button></div></div>`;
+}
+function sheetBareme() {
+  const t = today(), B = E.baremeAt(S, t), b = S.bareme;
+  const fut = baremeChanges(t, '2099-12-31'), past = baremeChanges(E.addDays(t, -400), t).reverse().slice(0, 3);
+  const chg = c => `<div class="row" style="display:block"><b>${cap(dFirst(c.du))}</b><div class="tiny">${c.diffs.map(d => BLAB[d.f] + ' : ' + bVal(d.f, d.avant) + ' → <b>' + bVal(d.f, d.apres) + '</b>').join('<br>')}</div></div>`;
+  return `<div class="sh"><div><h2>Barème officiel</h2><div class="tiny">${esc((b && b.source) || 'Valeurs officielles intégrées à Centime')}</div></div><button class="icbtn" data-a="closeSheet">${IC.x}</button></div>
+    <div class="sec"><div class="lb">En vigueur aujourd’hui</div><div class="card"><div class="rows">
+      ${BORDER.map((f, i) => `<div class="row"${i >= 10 ? ' style="opacity:.6"' : ''}><span class="l">${BLAB[f]}${i >= 10 ? ' <small>(au-delà du plafond)</small>' : ''}</span><span class="v num">${bVal(f, B[f])}</span></div>`).join('')}</div></div></div>
+    <div class="sec"><div class="lb">À venir</div><div class="card"><div class="rows">${fut.length ? fut.map(chg).join('') : '<div class="empty">Aucun changement annoncé pour l’instant. Les nouveaux chiffres (SMIC, plafond…) sont en général publiés fin décembre : Centime les prendra tout seul.</div>'}</div></div></div>
+    ${past.length ? `<div class="sec"><div class="lb">Derniers changements</div><div class="card"><div class="rows">${past.map(chg).join('')}</div></div></div>` : ''}
+    ${b && b.dernier && b.dernier.impact && b.dernier.impact.length ? `<div class="sec"><div class="lb">Effet de la dernière mise à jour</div><div class="card"><div class="rows">${b.dernier.impact.map(x => `<div class="row"><span class="l">${ymLabel(x.ym)}</span><span class="v num">${eur(x.avant)} → <b>${eur(x.apres)}</b></span></div>`).join('')}</div></div></div>` : ''}
+    <div class="sec"><div class="lb">Ce qui est suivi tout seul</div><p class="tiny">SMIC (ton taux n’est jamais compté en dessous), plafond de la Sécu, retraite de base et complémentaire, CEG, CSG, CRDS et leur assiette.</p></div>
+    <div class="sec"><div class="lb">Ce que tu dois me dire</div><p class="tiny">Une augmentation décidée par ton employeur ou ta convention collective (Réglages › Contrat › Augmentations), un changement de ton taux d’impôt, de mutuelle ou de prévoyance. La comparaison avec ton vrai bulletin, dans Paie, te signale tout écart.</p></div>`;
+}
+function baremeLaunch() {
+  const q = new URLSearchParams(location.search);
+  if (!q.get('bareme')) return false;
+  history.replaceState(null, '', appUrl());
+  baremeSync(true).then(() => { ui.sheet = { kind: 'bareme' }; openSheet(sheetBareme()); });
+  return true;
+}
+
+/* ----- signature au doigt (pavé de signature + rendu vectoriel dans le PDF) ----- */
+// signature stockée en traits normalisés : { ratio, strokes: [[x, y, x, y, …], …] } (0 → 1)
+function sigPath(sig, w, h, pad = 2) {
+  if (!sig || !sig.strokes || !sig.strokes.length) return '';
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
+  sig.strokes.forEach(s => { for (let i = 0; i < s.length; i += 2) { x0 = Math.min(x0, s[i]); x1 = Math.max(x1, s[i]); y0 = Math.min(y0, s[i + 1]); y1 = Math.max(y1, s[i + 1]); } });
+  const bw = Math.max(1e-3, (x1 - x0) * sig.ratio), bh = Math.max(1e-3, y1 - y0), k = Math.min((w - 2 * pad) / bw, (h - 2 * pad) / bh);
+  const ox = pad, oy = (h - bh * k) / 2;
+  const P = (x, y) => [ox + (x - x0) * sig.ratio * k, oy + (y - y0) * k];
+  return sig.strokes.map(s => {
+    const pts = []; for (let i = 0; i < s.length; i += 2) pts.push(P(s[i], s[i + 1]));
+    if (pts.length === 1) return `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}l0.1 0`;
+    let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 1; i < pts.length - 1; i++) { const m = [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2]; d += `Q${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)} ${m[0].toFixed(1)} ${m[1].toFixed(1)}`; }
+    const L = pts[pts.length - 1]; return d + `L${L[0].toFixed(1)} ${L[1].toFixed(1)}`;
+  }).join('');
+}
+const sigSvg = (sig, w = 220, h = 70) => `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" class="sigprev"><path d="${sigPath(sig, w, h, 4)}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+let sigDone = null;
+function openSignPad(done) {
+  sigDone = done;
+  const el = document.createElement('div'); el.className = 'sigpad'; el.id = 'sigpad';
+  el.innerHTML = `<div class="sp-box"><div class="sp-h"><b>Signe avec ton doigt</b><span class="tiny">Pour plus de place, tourne ton téléphone</span></div>
+    <div class="sp-zone"><canvas id="sigCanvas"></canvas><div class="sp-line"></div><span class="sp-x">✕</span></div>
+    <div class="btns"><button class="btn" data-a="sigClear">Effacer</button><button class="btn" data-a="sigCancel">Annuler</button><button class="btn pri" data-a="sigOk">Valider</button></div></div>`;
+  document.body.appendChild(el);
+  const cv = el.querySelector('canvas'), ctx = cv.getContext('2d');
+  const strokes = []; let cur = null;
+  const size = () => {
+    const r = cv.parentElement.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = r.width * dpr; cv.height = r.height * dpr; cv.style.width = r.width + 'px'; cv.style.height = r.height + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); redraw();
+  };
+  const ink = () => getComputedStyle(document.documentElement).getPropertyValue('--tx').trim() || '#fff';
+  function drawStroke(s) {
+    const W = cv.clientWidth, H = cv.clientHeight; ctx.beginPath();
+    const p = i => [s[i] * W, s[i + 1] * H];
+    let a = p(0); ctx.moveTo(a[0], a[1]);
+    if (s.length === 2) ctx.lineTo(a[0] + 0.1, a[1]);
+    for (let i = 2; i < s.length - 2; i += 2) { const b = p(i), c = p(i + 2); ctx.quadraticCurveTo(b[0], b[1], (b[0] + c[0]) / 2, (b[1] + c[1]) / 2); }
+    if (s.length > 2) { const z = p(s.length - 2); ctx.lineTo(z[0], z[1]); }
+    ctx.stroke();
+  }
+  function redraw() { ctx.clearRect(0, 0, cv.width, cv.height); ctx.lineWidth = 2.6; ctx.lineCap = ctx.lineJoin = 'round'; ctx.strokeStyle = ink(); strokes.forEach(drawStroke); if (cur) drawStroke(cur); }
+  const pos = e => { const r = cv.getBoundingClientRect(); return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))]; };
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); cv.setPointerCapture(e.pointerId); cur = pos(e); redraw(); });
+  cv.addEventListener('pointermove', e => {
+    if (!cur) return; e.preventDefault();
+    const [x, y] = pos(e), W = cv.clientWidth, H = cv.clientHeight, lx = cur[cur.length - 2], ly = cur[cur.length - 1];
+    if (Math.hypot((x - lx) * W, (y - ly) * H) < 1.5) return;
+    cur.push(x, y); redraw();
+  });
+  const end = () => { if (cur) { strokes.push(cur.map(v => Math.round(v * 1000) / 1000)); cur = null; redraw(); } };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  el._get = () => ({ ratio: cv.clientWidth / cv.clientHeight, strokes: strokes.slice() });
+  el._clear = () => { strokes.length = 0; cur = null; redraw(); };
+  requestAnimationFrame(size);
+  el._resize = () => size(); window.addEventListener('resize', el._resize);
+}
+function closeSignPad() { const el = document.getElementById('sigpad'); if (el) { window.removeEventListener('resize', el._resize); el.remove(); } }
+
+/* ----- envoi par mail : le PDF signé part en pièce jointe via le menu Partager (Mail) ----- */
+function reqMail(q) {
+  const st = S.settings, name = [st.prenom, st.nom].filter(Boolean).join(' ');
+  const subject = REQ_TITLES[q.type] + ' – ' + reqPeriod(q).replace('⇄', '/').replace('→', 'au') + (name ? ' – ' + name : '');
+  const body = 'Bonjour,\n\nVeuillez trouver ci-joint ma ' + REQ_TITLES[q.type].toLowerCase() + ' (' + reqObject(q) + ').\n\nJe reste à votre disposition pour en parler.\n\nBien cordialement,\n' + (name || '');
+  return { subject, body };
+}
+async function sendReqMail(q) {
+  const bytes = buildReqPdf(q), m = reqMail(q);
+  const fname = (REQ_TYPES[q.type] + ' ' + q.from).replace(/[^\wÀ-ÿ -]/g, '').replace(/\s+/g, '-') + '.pdf';
+  const file = new File([bytes], fname, { type: 'application/pdf' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: m.subject, text: m.body }); return 'shared'; }
+    catch (e) { if (e.name === 'AbortError') return 'abort'; }
+  }
+  // pas de partage de fichier : brouillon de mail + PDF téléchargé à joindre
+  sharePdf(bytes, fname);
+  const to = (S.settings.emailEmployeur || '').trim();
+  setTimeout(() => { location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent(m.subject) + '&body=' + encodeURIComponent(m.body + '\n\n(PDF en pièce jointe)'); }, 600);
+  return 'mailto';
+}
+
+Object.assign(A, {
+  baremeOpen() { ui.sheet = { kind: 'bareme' }; openSheet(sheetBareme()); },
+  baremeNow(el) {
+    el.disabled = true; el.textContent = 'Vérification…';
+    baremeSync(true).then(r => { render(); toast(!r ? 'Vérification impossible pour l’instant' : r.changed && r.nouveau ? baremeMsg(r.impact) : '✓ Barème officiel à jour'); });
+  },
+  raiseAdd() {
+    const du = (document.getElementById('raiseDu') || {}).value, taux = parseNum((document.getElementById('raiseTaux') || {}).value);
+    if (!du || !(taux > 0)) { toast('Indique la date et le nouveau taux horaire'); return; }
+    const st = S.settings; st.tauxHist = (st.tauxHist || []).filter(x => x.du !== du).concat([{ du, taux }]).sort((a, b) => a.du < b.du ? -1 : 1);
+    commit('Augmentation enregistrée : ' + n2(taux) + ' € à partir du ' + dDate(du));
+  },
+  raiseDel(el) { const st = S.settings; st.tauxHist = (st.tauxHist || []).filter(x => x.du !== el.dataset.du); commit('Augmentation supprimée'); },
+  sigNew() {
+    openSignPad(sig => {
+      S.settings.signature = sig; save(false);
+      if (ui.sheet && ui.sheet.kind === 'req') { ui.sheet.draft.signed = true; refreshSheetReq(); } else render();
+      toast('✍️ Signature enregistrée sur ce téléphone');
+    });
+  },
+  sigClear() { const el = document.getElementById('sigpad'); if (el) el._clear(); },
+  sigCancel() { closeSignPad(); },
+  sigOk() {
+    const el = document.getElementById('sigpad'); if (!el) return;
+    const sig = el._get(), n = sig.strokes.reduce((t, s) => t + s.length / 2, 0);
+    if (n < 12) { toast('Signe un peu plus grand 🙂'); return; }
+    closeSignPad(); if (sigDone) sigDone(sig);
+  },
+  sigDel() { if (!confirm('Effacer ta signature de ce téléphone ?')) return; S.settings.signature = null; save(false); render(); toast('Signature effacée'); },
+  rSign(el) { const q = ui.sheet.draft; q.signed = !q.signed; refreshSheetReq(); },
+  async rMail() {
+    const q = ui.sheet.draft, c = reqCalc(q);
+    if (!c.ok) { toast(c.warn[0] || 'Vérifie la demande'); return; }
+    upsertReq(clone(q)); save(); recompute();
+    const r = await sendReqMail(q);
+    if (r === 'shared' || r === 'mailto') {
+      if (q.status === 'brouillon') q.status = 'envoyee';
+      q.sentAt = today(); upsertReq(clone(q)); commit(r === 'shared' ? '📧 Demande envoyée : statut « Envoyée »' : 'Joins le PDF téléchargé à ton mail');
+      refreshSheetReq();
+    }
+  },
+  copyMailTo() { const to = (S.settings.emailEmployeur || '').trim(); if (!to) return; navigator.clipboard.writeText(to).then(() => toast('Adresse copiée : colle-la dans « À »'), () => toast(to)); },
 });
 
 /* ---------- démarrage ---------- */
