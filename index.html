@@ -153,6 +153,7 @@ button{background:none;border:0;cursor:pointer}
 .inp{text-align:left;width:100%}
 input[type=time]{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 6px;font-size:17px;font-weight:700;min-height:44px;width:100%;text-align:center;outline:none;-webkit-appearance:none;appearance:none}
 .sw{position:relative;display:inline-block;vertical-align:middle;width:51px;height:31px;flex:0 0 auto}
+.fld .sw{flex:0 0 51px}
 .sw input{opacity:0;width:0;height:0;position:absolute}
 .sw span{position:absolute;inset:0;border-radius:99px;background:var(--card2);border:1px solid var(--line);transition:.2s}
 .sw span::after{content:"";position:absolute;width:27px;height:27px;border-radius:50%;background:#fff;top:1px;left:1px;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.3)}
@@ -237,9 +238,47 @@ details[open] summary::after{content:" ⌄"}
 .reqsum{box-shadow:none;margin:0}
 .reqbig{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .reqbig>div{background:var(--card2);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:2px}
-.reqbig b{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.reqbig b{font-size:17px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
 textarea.inp{min-height:84px;resize:vertical;line-height:1.4;padding:10px}
 select.inp{-webkit-appearance:none;appearance:none}
+.cdown{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.cdown>div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:1px;min-width:0}
+.cdown .e{font-size:20px}.cdown .k{font-size:10.5px;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em}
+.cdown b{font-size:12.5px;font-weight:800;line-height:1.15;margin:2px 0}.cdown .tiny{font-size:10.5px}
+.wxm{display:flex;align-items:center;gap:12px}.wxi{font-size:44px;line-height:1}.wxm b{font-size:34px;font-weight:800;letter-spacing:-.03em}
+.wxd{margin-left:auto;display:flex;flex-direction:column;gap:6px;text-align:right}.wxd b{display:block;font-size:14px}
+.wxa{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.earn{display:flex;flex-direction:column;gap:2px;background:linear-gradient(135deg,rgba(50,215,75,.14),rgba(50,215,75,.04));border:1px solid rgba(50,215,75,.25);border-radius:16px;padding:12px 14px;margin:-4px 0 12px}
+.earn b{font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--green)}
+.bilan{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;font:inherit;color:inherit}
+.bilan .go{font-size:13px;font-weight:800;color:var(--gold);white-space:nowrap}
+.eqs{display:flex;flex-wrap:wrap;gap:6px}.eq{background:var(--card2);border-radius:99px;padding:6px 11px;font-size:13px}
+.bdg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bdg>div{background:var(--card2);border-radius:14px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;opacity:.55}
+.bdg>div.on{opacity:1;background:var(--goldbg);box-shadow:inset 0 0 0 1px var(--gold)}
+.bdg .e{font-size:26px}.bdg b{font-size:12px}.bdg .tiny{font-size:10.5px;line-height:1.25}
+.chart{width:100%;height:auto;display:block}
+.sws{display:flex;gap:8px}.swc{width:30px;height:30px;border-radius:50%;border:2px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.25)}.swc.on{border-color:var(--tx);transform:scale(1.08)}
+.step{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.step:first-of-type{border-top:0}
+.step>b{width:28px;height:28px;flex:0 0 auto;border-radius:50%;background:var(--goldbg);color:var(--gold);display:grid;place-items:center;font-weight:900}
+.step .st-t{font-weight:800;margin-bottom:2px}.step a.btn{text-decoration:none;display:inline-flex}
+.wrapped{position:fixed;inset:0;z-index:80;color:#fff;display:flex;flex-direction:column;justify-content:center;padding:calc(var(--sat) + 40px) 28px calc(var(--sab) + 40px);opacity:0;transition:opacity .3s, background .5s;background:#08080a}
+.wrapped.on{opacity:1}
+.wbars{position:absolute;top:calc(var(--sat) + 12px);left:14px;right:14px;display:flex;gap:4px}
+.wbars i{flex:1;height:3px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}.wbars b{display:block;height:100%;width:0;background:#fff}
+.wx-close{position:absolute;top:calc(var(--sat) + 24px);right:14px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}.wx-close svg{width:18px;height:18px}
+.wslide{animation:fade .45s ease}.we{font-size:64px}.wt{font-size:52px;font-weight:900;letter-spacing:-.04em;line-height:1.05;margin:14px 0 8px;background:linear-gradient(90deg,#fff6dc,#f6d68c,#e6bd6a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ws{font-size:22px;font-weight:700;line-height:1.3}.wf{font-size:16px;color:rgba(255,255,255,.65);margin-top:14px;line-height:1.45}
+.lock{position:fixed;inset:0;z-index:99;background:#08080a;color:#f5f5f7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:calc(var(--sat) + 20px) 20px calc(var(--sab) + 20px);transition:opacity .3s}
+.lock.out{opacity:0}.lk-logo{width:64px;height:64px;border-radius:16px}.lk-t{font-size:18px;font-weight:700}
+.lk-d{display:flex;gap:16px}.lk-d i{width:14px;height:14px;border-radius:50%;border:2px solid #e6bd6a}.lk-d i.on{background:#e6bd6a}
+.lk-d.shake{animation:shake .4s}@keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.lk-k{display:grid;grid-template-columns:repeat(3,76px);gap:14px;margin-top:8px}
+.lk-k button{height:76px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;font-size:30px;font-weight:500}
+.lk-k button:active{background:rgba(255,255,255,.22)}.lk-k .lk-f{background:none;font-size:15px;font-weight:700;color:#e6bd6a}
+.lk-forgot{color:rgba(245,245,247,.5);font-size:14px;margin-top:6px}
+[data-oled][data-theme=dark]{--bg:#000;--bg2:#0a0a0a;--card:rgba(255,255,255,.045);--card2:rgba(255,255,255,.075);--glass:rgba(0,0,0,.78)}
+[data-oled][data-theme=dark] body::before{opacity:.45}
 /* ===== écran de chargement ===== */
 #splash{position:fixed;inset:0;z-index:100;background:#08080a;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#f5f5f7;
   transition:opacity .55s ease,transform .55s cubic-bezier(.2,.8,.2,1),filter .55s ease}
@@ -404,12 +443,19 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     deduireManquantes: false,
     cp: { mode: 'ouvrables', report: 7 },
     brutSaisonnier: 5476.33,
+    saisonDebut: '2026-07-10',
+    paie: { jour: 0 },
+    look: { accent: 'or', oled: false },
+    fx: { sons: true, confettis: true },
+    meteo: { actif: true, ville: 'Saillagouse' },
+    epargne: { actif: false, nom: '', objectif: 500, part: 50, deja: 0 },
+    lock: { mode: 'off', pinHash: '', salt: '', cred: '', want: '' },
     finContrat: { precarite: true, inclureCP: true },
     theme: 'dark',
     schema: 2,
     github: { owner: '', repo: '', branch: 'main', path: 'centime-data.json', token: '', auto: false, last: null },
   });
-  const newState = () => ({ v: 1, settings: defaults(), days: {}, months: {}, requests: [], clock: null });
+  const newState = () => ({ v: 1, settings: defaults(), days: {}, months: {}, requests: [], badges: {}, fx: {}, clock: null });
 
   /* ---------- journée ---------- */
   function dayInfo(S, k) {
@@ -816,7 +862,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.4';
+const VERSION = '1.5';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -880,7 +926,7 @@ function hydrate(j) {
   s.settings = merge(s.settings, old);
   // v1.3 : clôture de paie au 26 (déduite du bulletin de septembre) pour les données créées avant
   if (!old.schema) { if (!old.clotureJour) s.settings.clotureJour = 26; s.settings.schema = 2; }
-  s.days = j.days || {}; s.months = j.months || {}; s.requests = Array.isArray(j.requests) ? j.requests : []; s.clock = j.clock || null; s.onboarded = !!j.onboarded;
+  s.days = j.days || {}; s.months = j.months || {}; s.requests = Array.isArray(j.requests) ? j.requests : []; s.badges = j.badges || {}; s.fx = j.fx || {}; s.clock = j.clock || null; s.onboarded = !!j.onboarded;
   return s;
 }
 function load() {
@@ -897,7 +943,7 @@ function save(doSync = true) {
   if (doSync) scheduleSync();
 }
 function recompute() { R = E.compute(S); }
-function commit(msg) { save(); recompute(); render(); if (msg) toast(msg); }
+function commit(msg) { const prev = fxSnapshot(); save(); recompute(); render(); if (msg) toast(msg); fxAfter(prev); }
 const contractYm = ym => { const a = E.ymOf(S.settings.contrat.debut), b = E.ymOf(S.settings.contrat.fin); return ym < a ? a : ym > b ? b : ym; };
 const dayOf = k => (R && R.days[k]) || E.dayInfo(S, k);
 
@@ -965,9 +1011,11 @@ function vHome() {
     <div class="sub"><span>Brut <b class="num">${eur(P.brut)}</b></span><span>Heures sup <b class="num">${hm(M.min25 + M.min50)}</b></span><span>Tickets <b>${M.tickets}</b></span></div>
     <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">${verifBadge()}${M.unconfirmed ? `<span class="badge o">${M.unconfirmed} j à confirmer</span>` : ''}</div>
   </div>`;
+  h += countdowns(t);
   const totUnc = Object.values(R.months).reduce((a, m) => a + m.unconfirmed, 0);
   if (totUnc) h += `<button class="alert" data-a="goHours"><div><b>${totUnc} journée${totUnc > 1 ? 's' : ''} passée${totUnc > 1 ? 's' : ''}</b> encore « prévue${totUnc > 1 ? 's' : ''} » : confirme ou corrige tes vraies heures.</div><span class="go">Voir ›</span></button>`;
 
+  h += wxCard();
   // aujourd'hui
   const di = dayOf(t);
   let st1, acts = '';
@@ -984,7 +1032,7 @@ function vHome() {
     acts += `<button class="btn" data-a="day" data-k="${t}">${IC.edit} ${di.confirmed ? 'Modifier' : 'Corriger'}</button>`;
     acts += `<button class="btn" data-a="clockIn">${IC.play} Pointer</button></div>`;
   }
-  h += `<div class="card today"><h3>Aujourd'hui${di.confirmed ? '<span class="badge g">✓ saisi</span>' : ''}</h3><div class="when">${dLong(t)}</div><div class="st">${st1}</div>${acts}</div>`;
+  h += `<div class="card today"><h3>Aujourd'hui${di.confirmed ? '<span class="badge g">✓ saisi</span>' : ''}</h3><div class="when">${dLong(t)}</div><div class="st">${st1}</div>${earnHtml()}${S.clock ? '' : expressHint(di)}${acts}</div>`;
 
   // semaine
   const w = R.weeks.find(x => x.monday === E.mondayOf(t));
@@ -1005,6 +1053,8 @@ function vHome() {
     <div class="card stat"><div class="k"><span class="dot"></span>Tickets resto</div><div class="v num">${M.tickets}</div><div class="d">${eur(P.tickets)} retenus · ${eur(P.ticketsPat)} offerts</div></div>
     <div class="card stat"><div class="k"><span class="dot" style="background:var(--purple)"></span>Fin de contrat</div><div class="v num">J-${F.joursRestants}</div><div class="d">${dDate(st.contrat.fin)}</div></div>
   </div>`;
+  h += savingsCard();
+  { const sb = stats(); h += `<button class="card bilan" data-a="bilan"><div><h3 style="margin-bottom:4px">✨ Ton bilan</h3><div class="tiny">${hm(sb.hours)} travaillées · ${hm(sb.hsMin)} sup · ${Object.keys(S.badges || {}).length}/${BADGES.length} succès</div></div><span class="go">Graphiques, Wrapped ›</span></button>`; }
   const next = nextHoliday(t);
   if (next) h += `<div class="card"><div class="row"><span class="l">Prochain jour férié</span><span class="v">${next.name} · ${dShort(next.k)}</span></div></div>`;
   return h;
@@ -1058,6 +1108,7 @@ function vHours() {
   }
   h += `<div class="card"><div class="mnav"><button class="icbtn" data-a="calPrev">${IC.left}</button><b>${ymLabel(ym)}</b><button class="icbtn" data-a="calNext">${IC.right}</button></div>
     <div class="cal">${cal}</div>
+    ${R.months[ym] ? `<div class="btns" style="margin-top:12px"><button class="btn sm" style="flex:1" data-a="releve" data-ym="${ym}">${IC.doc} Relevé d’heures PDF</button></div>` : ''}
     <div class="legend"><span><i style="background:var(--goldbg);border:1px solid var(--gold)"></i>Saisi</span><span><i style="border:1.5px dashed var(--tx3)"></i>Prévu</span><span><i style="background:rgba(100,210,255,.4)"></i>Congé</span><span><i style="background:rgba(191,90,242,.4)"></i>Férié</span><span><i style="background:var(--green);border-radius:50%"></i>Heures en plus</span>${S.settings.hs.reposEnHS ? '<span><i style="background:rgba(50,215,75,.35)"></i>Repos travaillé = HS</span>' : ''}</div>
     ${unc ? `<div class="btns" style="margin-top:14px"><button class="btn pri" data-a="confirmMonth" data-ym="${ym}">${IC.check} Confirmer ${unc} jour${unc > 1 ? 's' : ''} passé${unc > 1 ? 's' : ''}</button></div>` : ''}
   </div>`;
@@ -1125,7 +1176,8 @@ function vPay() {
     <div class="row"><span class="l">Heures sup nettes exonérées d'impôt</span><span class="v num">${eur(P.hsNetExo)}</span></div>
     <div class="row"><span class="l">Tickets resto · part employeur</span><span class="v num pos">+${eur(P.ticketsPat)}</span></div>
     <div class="row"><span class="l">dont suppression cotis. chômage et maladie</span><span class="v num">${eur(P.evolution)}</span></div>
-    <div class="row"><span class="l">Heures sup du mois</span><span class="v num">${hm(M.min25 + M.min50)}</span></div></div></div>`;
+    <div class="row"><span class="l">Heures sup du mois</span><span class="v num">${hm(M.min25 + M.min50)}</span></div></div>
+    ${P.m25 + P.m50 ? `<div class="eqs" style="margin-top:10px">${equivHtml((P.m25 + P.m50) * (P.brut ? P.netAvantIR / P.brut : 0.78))}</div>` : ''}</div>`;
 
   // primes
   const mo = S.months[ym] || {};
@@ -1134,14 +1186,8 @@ function vPay() {
     <div style="display:grid;grid-template-columns:1fr 110px auto;gap:8px;margin-top:10px"><input class="inp" id="pLabel" placeholder="Libellé (ex. Prime A)"><input class="inp num" id="pAmount" inputmode="decimal" placeholder="Montant"><button class="btn sm pri" data-a="addPrime" data-ym="${ym}">${IC.plus}</button></div>
     <p class="tiny" style="margin-top:8px">Montant brut, soumis à cotisations comme sur ton bulletin.</p></div>`;
 
-  // comparaison
-  const reel = mo.netReel;
-  let ecart = '';
-  if (reel != null && reel !== '') {
-    const d = r2(+reel - P.net);
-    ecart = Math.abs(d) < 0.005 ? '<span class="badge g">✓ Identique au centime</span>' : `<span class="badge ${d > 0 ? 'g' : 'r'}">Écart ${d > 0 ? '+' : ''}${eur(d)}</span>`;
-  }
-  h += `<div class="card"><h3>Comparer avec ton vrai bulletin</h3><div class="fld" style="padding-top:0"><label>Net à payer reçu</label><input type="text" inputmode="decimal" data-mset="${ym}.netReel" value="${reel != null ? numIn(reel) : ''}" placeholder="0,00"></div>${ecart ? '<div style="margin-top:6px">' + ecart + '</div>' : ''}</div>`;
+  h += reelCard(ym, M.pay, M);
+  h += `<button class="card bilan" data-a="sim"><div><h3 style="margin-bottom:4px">🔮 Et si… ?</h3><div class="tiny">Un lundi de plus, des heures sup, une absence : vois ton net changer</div></div><span class="go">Simuler ›</span></button>`;
 
   // contrôle
   const T = E.selfTest(S.settings);
@@ -1222,8 +1268,14 @@ function vCP() {
     <div class="row"><span class="l">Indemnité de fin de contrat (10 %)<br><span class="tiny">« prime de précarité » d'un CDD de surcroît d'activité</span></span><span class="v"><label class="sw"><input type="checkbox" data-set="finContrat.precarite" data-type="bool" ${st.finContrat.precarite ? 'checked' : ''}><span></span></label></span></div>
     ${st.finContrat.precarite ? `<div class="row"><span class="l">Montant estimé</span><span class="v num">≈ ${eur(F.precarite)}</span></div>` : ''}
     ${F.final ? `<div class="row tot"><span class="l">Dernier bulletin estimé (net)</span><span class="v num gold">${eur(F.final.net)}</span></div>` : ''}</div>
-    <div class="btns" style="margin-top:10px"><button class="btn" data-a="payYm" data-ym="${F.ymFin}" data-go="1">Voir le dernier bulletin</button></div>
+    <div class="btns" style="margin-top:10px"><button class="btn" data-a="payYm" data-ym="${F.ymFin}" data-go="1">Voir le dernier bulletin</button><button class="btn" data-a="renew">CDD renouvelé ?</button></div>
     <p class="tiny" style="margin-top:8px">Montants bruts estimés à partir des mois saisis et prévus. Le 1/10e inclut le brut de ton contrat saisonnier (${eur(st.brutSaisonnier)}).</p></div>`;
+  { const ch = chomage(); h += `<div class="card"><h3>Après le contrat<span class="r">chômage · estimation</span></h3>${ch.ok ? `<div class="reqbig" style="margin-top:0"><div><span class="tiny">Par jour</span><b class="num">${n2(ch.netJ)} €</b></div><div><span class="tiny">Par mois</span><b class="num gold">≈ ${Math.round(ch.mois).toLocaleString('fr-FR')} €</b></div><div><span class="tiny">Durée</span><b class="num">${Math.round(ch.duree / 30.4 * 10) / 10} mois</b></div></div>
+    <div class="rows" style="margin-top:10px"><div class="row"><span class="l">Salaire journalier de référence</span><span class="v num">${eur(ch.sjr)}</span></div>
+    <div class="row"><span class="l">Allocation brute</span><span class="v num">${eur(ch.brutJ)} / jour</span></div>
+    <div class="row"><span class="l">Durée d’indemnisation</span><span class="v num">${ch.duree} jours</span></div>
+    <div class="row"><span class="l">Premiers jours indemnisés vers le</span><span class="v">${dShort(ch.debut)}</span></div></div>
+    <p class="tiny" style="margin-top:8px">Calcul sur ${ch.jours} jours d’emploi (depuis le ${dDate(S.settings.saisonDebut || S.settings.contrat.debut)}) et ${eur(ch.salRef)} de salaires bruts. Barèmes Unédic en vigueur : partie fixe 13,18 €, minimum 32,13 €/jour, plafond 75 % du SJR, durée × 0,75. Attente de 7 jours + ${ch.differe} jours de différé pour les congés payés. Seul France Travail fixe le montant définitif : inscris-toi dès le lendemain de la fin du contrat.</p>` : '<p class="help">Il faut au moins 130 jours (6 mois) de travail pour ouvrir des droits.</p>'}</div>`; }
   h += `<div class="card"><details><summary>Comment c'est calculé ?</summary><div class="help">
     <p><b>Acquisition</b> : 2,5 jours ouvrables par mois de contrat (30 par an). Une absence non payée réduit l'acquisition ; un arrêt maladie donne encore 2 jours par mois.</p>
     <p><b>Report</b> : ton contrat (article 8) te fait garder les jours acquis pendant le contrat saisonnier du 10 juillet au 30 septembre 2026, soit environ 6,8 jours arrondis à 7. Ton bulletin de septembre affiche 0 : vérifie ce chiffre sur ton bulletin d'octobre et corrige-le dans Réglages si besoin.</p>
@@ -1244,8 +1296,19 @@ const fSel = (p, l, s, opts, type = 'str') => `<div class="fld">${lab(l, s)}<sel
 function vSettings(embedded) {
   const st = S.settings, g = st.github;
   let h = embedded ? '' : head('Centime ' + VERSION, 'Réglages');
-  h += `<div class="card"><h3>Toi</h3>${fTxt('prenom', 'Prénom', 'pour te saluer', 'Ton prénom')}
-    <div class="fld"><label>Apparence</label><div class="seg" style="width:190px">${[['auto', 'Auto'], ['dark', 'Sombre'], ['light', 'Clair']].map(o => `<button data-a="theme" data-v="${o[0]}" class="${st.theme === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div></div></div>`;
+  h += `<div class="card"><h3>Toi</h3>${fTxt('prenom', 'Prénom', 'pour te saluer', 'Ton prénom')}</div>`;
+  h += ghWizard();
+  h += `<div class="card"><h3>Apparence & effets</h3>
+    <div class="fld" style="padding-top:0"><label>Thème</label><div class="seg" style="width:190px">${[['auto', 'Auto'], ['dark', 'Sombre'], ['light', 'Clair']].map(o => `<button data-a="theme" data-v="${o[0]}" class="${st.theme === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div></div>
+    <div class="fld"><label>Couleur</label><div class="sws">${Object.entries(ACCENTS).map(([k, v]) => `<button data-a="accent" data-v="${k}" class="swc ${(st.look.accent || 'or') === k ? 'on' : ''}" style="background:linear-gradient(135deg,${v[1]},${v[2]})" aria-label="${v[0]}"></button>`).join('')}</div></div>
+    ${fSw('look.oled', 'Mode nuit de livraison', 'noir pur, idéal la nuit et pour la batterie')}
+    ${fSw('fx.sons', 'Son « cha-ching »', 'quand tu gagnes des heures sup ou un succès')}${fSw('fx.confettis', 'Confettis')}
+    ${fNum('paie.jour', 'Jour de paie', '0 = dernier jour du mois (le 30/09 sur ton bulletin)')}</div>`;
+  h += `<div class="card"><h3>Météo<span class="r"><button class="btn sm ghost" data-a="wxRefresh">Actualiser</button></span></h3>${fSw('meteo.actif', 'Afficher la météo sur l’accueil', 'neige, verglas et vent en Cerdagne')}${fSel('meteo.ville', 'Ville', '', Object.keys(TOWNS).map(t => [t, t]))}</div>`;
+  h += `<div class="card"><h3>Objectif d’épargne 🐷</h3>${fSw('epargne.actif', 'Activer', 'une barre qui se remplit avec tes heures sup')}${st.epargne.actif ? fTxt('epargne.nom', 'Pour quoi ?', '', 'Ex. nouveau téléphone') + fNum('epargne.objectif', 'Objectif', '€') + fNum('epargne.part', 'Part des heures sup mise de côté', '% du net des heures sup') + fNum('epargne.deja', 'Déjà de côté', '€') : ''}</div>`;
+  h += `<div class="card"><h3>Sécurité<span class="r">${st.lock.mode === 'off' || !st.lock.pinHash ? 'désactivé' : st.lock.mode === 'faceid' ? 'Face ID + code' : 'code'}</span></h3>
+    <p class="tiny" style="margin-bottom:10px">Verrouille Centime à l’ouverture (et après 2 min en arrière-plan) : tes salaires restent privés.</p>
+    <div class="seg">${[['off', 'Aucun'], ['pin', 'Code'], ['faceid', 'Face ID']].map(o => `<button data-a="lockSet" data-v="${o[0]}" class="${(st.lock.pinHash ? st.lock.mode : 'off') === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div></div>`;
 
   const full = r2(st.tauxHoraire * st.heuresMensuelles);
   h += `<div class="card"><h3>Pour tes demandes PDF</h3>
@@ -1289,21 +1352,6 @@ function vSettings(embedded) {
     ${fNum('brutSaisonnier', 'Brut du contrat saisonnier', '€ · cumul de ton bulletin de septembre')}
     ${fSw('finContrat.inclureCP', 'Payer les congés non pris à la fin')}
     ${fSw('finContrat.precarite', 'Indemnité de fin de contrat 10 %', 'à confirmer avec ton employeur')}</div>`;
-
-  const last = g.last ? new Date(g.last).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : 'jamais';
-  h += `<div class="card"><h3>GitHub<span class="r">${g.token && g.repo ? (sync.state === 'err' ? '<span class="neg">erreur</span>' : 'sauvegarde : ' + last) : 'non connecté'}</span></h3>
-    ${fTxt('github.owner', 'Utilisateur', '', 'ton-pseudo')}${fTxt('github.repo', 'Dépôt privé', 'pour tes données', 'centime-data')}
-    ${fTxt('github.branch', 'Branche', '', 'main')}${fTxt('github.path', 'Fichier', '', 'centime-data.json')}
-    ${fTxt('github.token', 'Jeton d\'accès', 'reste sur ce téléphone', 'github_pat_…', 'password')}
-    ${fSw('github.auto', 'Sauvegarde automatique', 'quelques secondes après chaque saisie')}
-    ${g.lastErr && sync.state === 'err' ? `<p class="tiny neg" style="margin-top:6px">Dernière erreur : ${esc(g.lastErr)}</p>` : ''}
-    <div class="btns" style="margin-top:10px"><button class="btn pri" data-a="ghSave">Sauvegarder</button><button class="btn" data-a="ghLoad">Restaurer</button></div>
-    <details><summary>Créer le dépôt et le jeton (2 min)</summary><div class="help"><ol>
-    <li>Sur github.com, crée un dépôt <b>privé</b> (ex. <i>centime-data</i>) : tes salaires n'ont rien à faire en public.</li>
-    <li>Profil → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
-    <li>Repository access : <i>Only select repositories</i> → ton dépôt privé. Permissions → <b>Contents : Read and write</b>.</li>
-    <li>Colle le jeton ici, active la sauvegarde automatique : chaque saisie part sur GitHub. Sur un nouveau téléphone, « Restaurer » récupère tout.</li></ol>
-    <p>Le jeton n'est jamais envoyé dans la sauvegarde ; il reste uniquement dans l'appli de ce téléphone.</p></div></details></div>`;
 
   h += `<div class="card"><h3>Installer sur l'iPhone</h3><div class="help"><ol>
     <li>Ouvre l'adresse GitHub Pages de l'appli dans <b>Safari</b>.</li>
@@ -1817,7 +1865,9 @@ async function ghSave(manual) {
     if (r0.status === 200) sha = (await r0.json()).sha; else if (r0.status !== 404) throw new Error(ghErr(r0.status));
     const body = { message: 'Centime · sauvegarde du ' + new Date().toLocaleString('fr-FR'), content: b64e(JSON.stringify(exportData(), null, 1)), branch: (g.branch || 'main').trim() };
     if (sha) body.sha = sha;
-    const r = await ghFetch(g, 'PUT', body);
+    let r = await ghFetch(g, 'PUT', body);
+    // coffre tout neuf (vide) : on laisse GitHub créer la branche par défaut
+    if (!r.ok && !sha && (r.status === 404 || r.status === 422)) { delete body.branch; r = await ghFetch(g, 'PUT', body); }
     if (!r.ok) throw new Error(ghErr(r.status));
     S.settings.github.last = new Date().toISOString(); S.settings.github.lastErr = '';
     save(false); setSync('ok'); if (manual) toast('Sauvegardé sur GitHub ✓');
@@ -1843,10 +1893,10 @@ async function ghLoad() {
   } catch (e) { setSync('err'); toast('GitHub : ' + (e.message === 'Failed to fetch' ? 'pas de connexion' : e.message)); }
 }
 function applyImport(d, msg) {
-  const keep = S.settings.github;
+  const keep = S.settings.github, keepLock = S.settings.lock;
   const s = hydrate(Object.assign({}, d, { onboarded: true }));
   s.settings.github = Object.assign({}, s.settings.github, { owner: keep.owner || s.settings.github.owner, repo: keep.repo || s.settings.github.repo, branch: keep.branch, path: keep.path, token: keep.token, auto: keep.auto });
-  S = s; S.onboarded = true;
+  s.settings.lock = keepLock; S = s; S.onboarded = true;
   save(false); recompute(); ui.anim = true; render(); toast(msg);
 }
 async function exportFile() {
@@ -1865,7 +1915,8 @@ function toast(m) { const t = document.getElementById('toast'); t.textContent = 
 function applyTheme() {
   const t = S.settings.theme, dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? '#0a0a0c' : '#f2f2f7';
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? (S.settings.look && S.settings.look.oled ? '#000000' : '#0a0a0c') : '#f2f2f7';
+  applyLook();
 }
 
 /* ---------- évènements ---------- */
@@ -1923,9 +1974,6 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) { re
 setInterval(() => { if (S.clock && ui.tab === 'home') { const l = document.getElementById('live'); if (l) l.textContent = hm(elapsed()); } }, 15000);
 
 /* ---------- démarrage ---------- */
-recompute();
-render();
-splash();
 function splash() {
   const el = document.getElementById('splash');
   if (!el) { if (!S.onboarded) setTimeout(welcome, 350); return; }
@@ -1944,7 +1992,7 @@ function splash() {
     if (gone) return; gone = true;
     el.classList.add('out');
     ui.anim = true; render();
-    setTimeout(() => { el.remove(); if (!S.onboarded) welcome(); }, 560);
+    setTimeout(() => { el.remove(); afterSplash(); }, 560);
   };
   setTimeout(done, dur);
   el.addEventListener('click', done);
@@ -1978,6 +2026,662 @@ function showUpdate(v) {
 }
 setTimeout(checkUpdate, 3000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
+
+/* ============================================================
+   CENTIME 1.5 — extras : météo, comptes à rebours, compteur en direct,
+   succès, effets, Wrapped, carte du mois, épargne, thèmes, verrou,
+   relevé PDF, simulateur, chômage, bulletin, assistant GitHub
+   ============================================================ */
+
+/* ---------- apparence ---------- */
+const ACCENTS = {
+  or: ['Or', '#e6bd6a', '#b8862f', '#a8771f', '#8a5f12'],
+  emeraude: ['Émeraude', '#43d9a3', '#15966b', '#11865e', '#0b6646'],
+  bleu: ['Bleu nuit', '#86b6ff', '#3d67d9', '#2f5fd0', '#1f45a3'],
+  rouge: ['Rouge Cosy', '#ff8a7a', '#cf3b2f', '#c0392b', '#962c21'],
+  rose: ['Rose', '#ffa3d2', '#d2569a', '#c2457f', '#992f62'],
+};
+const hexRgba = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+function applyLook() {
+  const L = S.settings.look || {}, root = document.documentElement, dark = root.dataset.theme === 'dark';
+  const ac = ACCENTS[L.accent] || ACCENTS.or;
+  if ((L.accent || 'or') === 'or') ['--gold', '--gold2', '--goldbg'].forEach(v => root.style.removeProperty(v));
+  else {
+    const main = dark ? ac[1] : ac[3], sec = dark ? ac[2] : ac[4];
+    root.style.setProperty('--gold', main); root.style.setProperty('--gold2', sec); root.style.setProperty('--goldbg', hexRgba(main, dark ? 0.14 : 0.11));
+  }
+  if (L.oled && dark) root.dataset.oled = '1'; else delete root.dataset.oled;
+}
+
+/* ---------- comptes à rebours ---------- */
+function payDate(ym) { const j = +((S.settings.paie || {}).jour) || 0, n = E.daysInMonth(ym); return ym + '-' + String(j && j <= n ? j : n).padStart(2, '0'); }
+function nextPay(t) { let d = payDate(E.ymOf(t)); if (d < t) d = payDate(E.addMonths(E.ymOf(t), 1)); return d; }
+function nextRest(t) { for (let i = 1; i < 30; i++) { const k = E.addDays(t, i), di = dayOf(k); if (!di.inC) return null; if (!di.worked) return k; } return null; }
+const inDays = (t, k) => { const n = E.dayDiff(t, k); return n <= 0 ? 'aujourd’hui' : n === 1 ? 'demain' : 'dans ' + n + ' j'; };
+function countdowns(t) {
+  const st = S.settings, items = [];
+  const pay = nextPay(t);
+  items.push(['💸', 'Paie', pay === t ? 'aujourd’hui 🎉' : inDays(t, pay), dShort(pay)]);
+  const rest = nextRest(t); if (rest) items.push(['🛋️', 'Repos', inDays(t, rest), dShort(rest)]);
+  const cp = R.cp.pris.find(p => p.k > t); items.push(['🏖️', 'Congés', cp ? inDays(t, cp.k) : '—', cp ? dShort(cp.k) : 'aucun posé']);
+  items.push(['🏁', 'Fin du CDD', 'J-' + R.fin.joursRestants, dShort(st.contrat.fin)]);
+  return `<div class="cdown">${items.map(i => `<div><span class="e">${i[0]}</span><span class="k">${i[1]}</span><b>${i[2]}</b><span class="tiny">${i[3]}</span></div>`).join('')}</div>`;
+}
+
+/* ---------- météo de Cerdagne (Open-Meteo, sans clé) ---------- */
+const TOWNS = { 'Saillagouse': [42.459, 2.038], 'Font-Romeu': [42.505, 2.04], 'Bourg-Madame': [42.433, 1.946], 'Mont-Louis': [42.51, 2.12], 'Puigcerdà': [42.432, 1.928], 'Prades': [42.617, 2.422], 'Ille-sur-Têt': [42.671, 2.621], 'Perpignan': [42.699, 2.895] };
+const WMO = c => c === 0 ? ['☀️', 'Grand soleil'] : c <= 2 ? ['🌤️', 'Éclaircies'] : c === 3 ? ['☁️', 'Couvert'] : c <= 48 ? ['🌫️', 'Brouillard'] : c <= 57 ? ['🌦️', 'Bruine'] : c <= 67 ? ['🌧️', 'Pluie'] : c <= 77 ? ['❄️', 'Neige'] : c <= 82 ? ['🌧️', 'Averses'] : c <= 86 ? ['🌨️', 'Averses de neige'] : ['⛈️', 'Orages'];
+let wx = null, wxLoading = false, wxFail = 0;
+try { wx = JSON.parse(localStorage.getItem('centime.wx') || 'null'); } catch (e) { }
+async function loadWeather(force) {
+  const m = S.settings.meteo || {}; if (!m.actif) return;
+  const town = TOWNS[m.ville] ? m.ville : 'Saillagouse';
+  if (!force && wx && wx.town === town && Date.now() - wx.t < 30 * 60e3) return;
+  if (wxLoading || Date.now() - wxFail < 60e3) return; wxLoading = true;
+  try {
+    const [la, lo] = TOWNS[town];
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,apparent_temperature,weather_code,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum,wind_gusts_10m_max&timezone=Europe%2FParis&forecast_days=3`);
+    if (!r.ok) throw new Error(r.status);
+    wx = { t: Date.now(), town, d: await r.json() };
+    try { localStorage.setItem('centime.wx', JSON.stringify(wx)); } catch (e) { }
+    wxLoading = false;
+    if (ui.tab === 'home' && !ui.sheet) render();
+  } catch (e) { wxFail = Date.now(); }
+  wxLoading = false;
+}
+function wxAlerts(dl, i) {
+  const a = [], code = dl.weather_code[i];
+  if ((dl.snowfall_sum[i] || 0) > 0 || (code >= 71 && code <= 77) || code === 85 || code === 86) a.push(['❄️', 'Neige' + (dl.snowfall_sum[i] ? ' (' + nd(dl.snowfall_sum[i]) + ' cm)' : '')]);
+  if (dl.temperature_2m_min[i] <= 1 && ((dl.precipitation_sum[i] || 0) > 0 || [56, 57, 66, 67].includes(code))) a.push(['🧊', 'Risque de verglas']);
+  else if (dl.temperature_2m_min[i] <= -2) a.push(['🥶', 'Gel le matin']);
+  if ((dl.wind_gusts_10m_max[i] || 0) >= 60) a.push(['💨', 'Rafales ' + Math.round(dl.wind_gusts_10m_max[i]) + ' km/h']);
+  if (code === 45 || code === 48) a.push(['🌫️', 'Brouillard']);
+  return a;
+}
+function wxCard() {
+  const m = S.settings.meteo || {}; if (!m.actif) return '';
+  if (!wx || !wx.d || wx.town !== (TOWNS[m.ville] ? m.ville : 'Saillagouse')) { setTimeout(() => loadWeather(true), 0); return `<div class="card wx"><h3>Météo · ${esc(m.ville || 'Saillagouse')}</h3><div class="tiny">${navigator.onLine === false ? 'Hors connexion : la météo s’affichera au retour du réseau.' : 'Chargement de la météo…'}</div></div>`; }
+  const c = wx.d.current, dl = wx.d.daily, [ic, lb] = WMO(c.weather_code), age = Math.round((Date.now() - wx.t) / 60000);
+  const alerts = wxAlerts(dl, 0), demain = wxAlerts(dl, 1);
+  const [ic1] = WMO(dl.weather_code[1]);
+  return `<div class="card wx"><h3>Météo · ${esc(wx.town)}<span class="r">${age < 2 ? 'à l’instant' : age < 60 ? 'il y a ' + age + ' min' : 'il y a ' + Math.round(age / 60) + ' h'}</span></h3>
+    <div class="wxm"><span class="wxi">${ic}</span><div><b class="num">${Math.round(c.temperature_2m)}°</b><div class="tiny">${lb} · ressenti ${Math.round(c.apparent_temperature)}°</div></div>
+    <div class="wxd"><div><span class="tiny">Aujourd’hui</span><b class="num">${Math.round(dl.temperature_2m_min[0])}° / ${Math.round(dl.temperature_2m_max[0])}°</b></div><div><span class="tiny">Demain ${ic1}</span><b class="num">${Math.round(dl.temperature_2m_min[1])}° / ${Math.round(dl.temperature_2m_max[1])}°</b></div></div></div>
+    ${alerts.length || demain.length ? `<div class="wxa">${alerts.map(a => `<span class="badge o">${a[0]} ${a[1]} aujourd’hui</span>`).join('')}${demain.map(a => `<span class="badge">${a[0]} ${a[1]} demain</span>`).join('')}</div>` : ''}</div>`;
+}
+
+/* ---------- compteur en direct ---------- */
+const nowMinF = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60; };
+function todayEarn() {
+  const t = today(), di = dayOf(t); if (!di.inC) return null;
+  const nm = nowMinF();
+  let min = 0, live = false;
+  if (S.clock && S.clock.k === t) {
+    min = (S.days[t] && S.days[t].type === 'travail' ? E.sumSeg(S.days[t].seg) : 0) + Math.max(0, nm - E.toMin(S.clock.start)); live = true;
+  } else if (di.type === 'travail' && di.confirmed) min = di.worked;
+  else if (di.type === 'travail') {
+    di.segs.forEach(s => { const a = E.toMin(s[0]), b = E.toMin(s[1]); if (nm > a) { min += Math.min(nm, b) - a; if (nm < b) live = true; } });
+  } else return null;
+  const ym = contractYm(E.ymOf(t)), P = R.months[ym].pay, ratio = P.brut ? P.netAvantIR / P.brut : 0.78;
+  const w = R.weeks.find(x => x.monday === E.mondayOf(t));
+  const before = w ? w.days.filter(d => d.k < t).reduce((a, d) => a + d.worked, 0) : 0;
+  const s25 = S.settings.hs.seuil25 * 60, restHS = di.planMin === 0 && S.settings.hs.reposEnHS;
+  const normal = restHS ? 0 : Math.max(0, Math.min(min, s25 - before)), hs = min - normal;
+  const rate = S.settings.tauxHoraire * ratio;
+  return { min, live, hs, euros: (normal + hs * (1 + S.settings.hs.maj25 / 100)) * rate / 60, perMin: (hs > 0 ? 1 + S.settings.hs.maj25 / 100 : 1) * rate / 60 };
+}
+function earnHtml() {
+  const e = todayEarn(); if (!e || (!e.min && !e.live)) return '';
+  return `<div class="earn"><span class="tiny">${e.live ? 'Gagné aujourd’hui · en direct' : 'Gagné aujourd’hui'}</span><b class="num" id="earn">${n2(e.euros)} €</b><span class="tiny">net estimé${e.hs ? ` · <span class="pos">dont ${hm(e.hs)} en heures sup</span>` : ''}${e.live ? ' · +' + n2(e.perMin * 60) + ' €/h' : ''}</span></div>`;
+}
+setInterval(() => { if (ui.tab !== 'home' || document.hidden) return; const el = document.getElementById('earn'); if (!el) return; const e = todayEarn(); if (e && e.live) el.textContent = n2(e.euros) + ' €'; }, 1000);
+
+/* ---------- pointage express ---------- */
+function expressHint(di) {
+  if (!di.inC || di.type !== 'travail') return '';
+  const nm = nowMinF();
+  if (!S.clock) { const s = di.plan.find(x => nm >= E.toMin(x[0]) - 30 && nm <= E.toMin(x[0]) + 60); if (s && !di.confirmed) return `<button class="btn pri" style="width:100%;margin-bottom:8px" data-a="clockIn">${IC.play} Pointer l’arrivée · prévu ${fmtT(s[0])}</button>`; }
+  return '';
+}
+
+/* ---------- épargne ---------- */
+// heures sup déjà faites (semaines commencées), converties en net estimé
+function hsNetCumul() {
+  const t = today(), st = S.settings, P = R.months[contractYm(E.ymOf(t))].pay, ratio = P.brut ? P.netAvantIR / P.brut : 0.78;
+  return R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + (w.min25 * (1 + st.hs.maj25 / 100) + w.min50 * (1 + st.hs.maj50 / 100)) / 60 * st.tauxHoraire * ratio, 0);
+}
+function savings() {
+  const ep = S.settings.epargne || {}; if (!ep.actif) return null;
+  const val = (+ep.deja || 0) + hsNetCumul() * (+ep.part || 0) / 100, obj = +ep.objectif || 1;
+  return { val, obj, pct: Math.min(100, val / obj * 100), nom: ep.nom || 'Mon objectif' };
+}
+function savingsCard() {
+  const s = savings(); if (!s) return '';
+  return `<div class="card"><h3>🐷 ${esc(s.nom)}<span class="r">${Math.round(s.pct)} %</span></h3><div class="bar"><i style="width:${s.pct}%"></i></div>
+    <div class="row" style="border:0;padding-bottom:0"><span class="l">${s.pct >= 100 ? '🎉 Objectif atteint !' : 'Encore ' + eur(Math.max(0, s.obj - s.val))}</span><span class="v num">${eur(s.val)} / ${eur(s.obj)}</span></div>
+    <p class="tiny">${S.settings.epargne.part} % de tes heures sup nettes + ${eur(+S.settings.epargne.deja || 0)} déjà de côté.</p></div>`;
+}
+
+/* ---------- « tes heures sup en vrai » ---------- */
+const EQUIV = [['⛽', 'plein d’essence', 'pleins d’essence', 70], ['🍕', 'pizza', 'pizzas', 12], ['🎬', 'place de ciné', 'places de ciné', 11.5], ['📺', 'mois de Netflix', 'mois de Netflix', 13.49], ['🍔', 'menu burger', 'menus burger', 11]];
+function equivHtml(euros) {
+  if (euros < 5) return '<span class="tiny">Fais quelques heures sup pour débloquer les équivalences 😉</span>';
+  return EQUIV.map(e => { const n = euros / e[3]; return `<span class="eq">${e[0]} <b>${nd(Math.floor(n * 10) / 10)}</b> ${n >= 2 ? e[2] : e[1]}</span>`; }).join('');
+}
+
+/* ---------- son « cha-ching » et confettis ---------- */
+let actx = null;
+function audio() { try { if (!actx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; actx = new C(); } if (actx.state === 'suspended') actx.resume(); return actx; } catch (e) { return null; } }
+function chaChing() {
+  if (!(S.settings.fx || {}).sons) return;
+  const a = audio(); if (!a) return;
+  const t = a.currentTime + 0.02, out = a.createGain(); out.gain.value = 0.35; out.connect(a.destination);
+  // « ka » : petit bruit métallique
+  const buf = a.createBuffer(1, a.sampleRate * 0.06, a.sampleRate), ch = buf.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / ch.length, 3);
+  const nz = a.createBufferSource(), bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3200; bp.Q.value = 2;
+  nz.buffer = buf; nz.connect(bp); bp.connect(out); nz.start(t);
+  // « ching » : deux cloches
+  const bell = (f, st, dur, vol) => {
+    [1, 2.76, 5.4].forEach((m, i) => {
+      const o = a.createOscillator(), g = a.createGain(); o.type = 'sine'; o.frequency.value = f * m;
+      g.gain.setValueAtTime(0.0001, st); g.gain.exponentialRampToValueAtTime(vol / (i + 1), st + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, st + dur / (i + 1));
+      o.connect(g); g.connect(out); o.start(st); o.stop(st + dur);
+    });
+  };
+  bell(1568, t + 0.07, 0.5, 0.5); bell(2093, t + 0.16, 0.9, 0.6);
+}
+function confetti(n = 110) {
+  if (!(S.settings.fx || {}).confettis) return;
+  const cv = document.createElement('canvas'), dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:95;pointer-events:none';
+  document.body.appendChild(cv);
+  const c = cv.getContext('2d'); c.scale(dpr, dpr);
+  const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim() || '#e6bd6a';
+  const cols = [gold, '#fff6dc', '#f6d68c', '#32d74b', '#64d2ff', '#ff9f0a'];
+  const P = Array.from({ length: n }, () => ({ x: W / 2 + (Math.random() - 0.5) * 80, y: H * 0.35, vx: (Math.random() - 0.5) * 13, vy: -Math.random() * 13 - 4, r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.4, w: 6 + Math.random() * 6, h: 3 + Math.random() * 5, c: cols[(Math.random() * cols.length) | 0] }));
+  const t0 = performance.now();
+  const step = now => {
+    const el = (now - t0) / 1000; c.clearRect(0, 0, W, H);
+    P.forEach(p => { p.vy += 0.38; p.vx *= 0.985; p.x += p.vx; p.y += p.vy; p.r += p.vr; c.save(); c.translate(p.x, p.y); c.rotate(p.r); c.globalAlpha = Math.max(0, 1 - el / 2.2); c.fillStyle = p.c; c.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); c.restore(); });
+    if (el < 2.3) requestAnimationFrame(step); else cv.remove();
+  };
+  requestAnimationFrame(step);
+}
+function celebrate(msg, big) { confetti(big ? 170 : 100); chaChing(); if (msg) setTimeout(() => toast(msg), 250); }
+
+/* ---------- succès ---------- */
+const BADGES = [
+  ['premier', '👣', 'Premier pas', 'Saisir ta première journée', c => c.confirmed >= 1],
+  ['assidu', '📅', 'Assidu', '20 journées saisies', c => c.confirmed >= 20],
+  ['semaine', '🏆', 'Semaine parfaite', 'Une semaine entièrement saisie, 35 h ou plus', c => c.perfectWeek],
+  ['levetot', '🌅', 'Lève-tôt', 'Commencer avant 8 h', c => c.early],
+  ['marathon', '🏃', 'Marathon', 'Une journée de 9 h ou plus', c => c.long],
+  ['lundi', '💰', 'Lundi d’or', 'Travailler un jour de repos', c => c.restWorked],
+  ['hs10', '⚡', '10 h sup', '10 heures sup cumulées', c => c.hs >= 600],
+  ['hs25', '🚀', '25 h sup', '25 heures sup cumulées', c => c.hs >= 1500],
+  ['mois', '✅', 'Mois bouclé', 'Un mois entièrement saisi', c => c.monthDone],
+  ['vacances', '🏖️', 'En vacances', 'Poser ton premier congé', c => c.cp >= 1],
+  ['diplomate', '🤝', 'Diplomate', 'Une demande acceptée', c => c.accepted],
+  ['centime', '🎯', 'Au centime près', 'Ton vrai net = l’estimation', c => c.exact],
+  ['coffre', '🔐', 'Coffre-fort', 'Sauvegarde GitHub active', c => c.backup],
+  ['epargne', '🐷', 'Économe', 'Objectif d’épargne atteint', c => c.saved],
+];
+function badgeCtx() {
+  const t = today(), keys = Object.keys(S.days);
+  const work = keys.filter(k => S.days[k].type === 'travail');
+  const sv = savings();
+  return {
+    confirmed: work.length,
+    perfectWeek: R.weeks.some(w => w.sunday < t && w.eff >= 35 * 60 && w.days.every(d => !d.inC || !d.planMin || d.hol || d.confirmed)),
+    early: work.some(k => (S.days[k].seg || []).some(s => E.toMin(s[0]) < 480)),
+    long: work.some(k => E.sumSeg(S.days[k].seg) >= 540),
+    restWorked: work.some(k => dayOf(k).planMin === 0 && E.sumSeg(S.days[k].seg) > 0),
+    hs: R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + w.min25 + w.min50, 0),
+    monthDone: Object.values(R.months).some(m => m.ym < E.ymOf(t) && !m.unconfirmed && Object.keys(S.days).some(k => k.startsWith(m.ym))),
+    cp: R.cp.pris.length,
+    accepted: (S.requests || []).some(q => q.status === 'acceptee'),
+    exact: Object.entries(S.months).some(([ym, mo]) => mo.reel && mo.reel.net != null && R.months[ym] && Math.abs(mo.reel.net - R.months[ym].pay.net) < 0.005),
+    backup: !!(ghCfg() && S.settings.github.last),
+    saved: !!(sv && sv.pct >= 100),
+  };
+}
+function checkBadges(cele) {
+  if (!S.badges) S.badges = {};
+  const c = badgeCtx(), news = BADGES.filter(b => !S.badges[b[0]] && b[4](c));
+  news.forEach(b => { S.badges[b[0]] = today(); });
+  if (news.length) { save(false); if (cele) setTimeout(() => celebrate(news.length > 1 ? `🏅 ${news.length} succès débloqués !` : `${news[0][1]} Succès débloqué : ${news[0][2]}`, true), 450); }
+  return news;
+}
+const badgesHtml = () => `<div class="bdg">${BADGES.map(b => { const on = S.badges && S.badges[b[0]]; return `<div class="${on ? 'on' : ''}"><span class="e">${on ? b[1] : '🔒'}</span><b>${b[2]}</b><span class="tiny">${on ? 'le ' + dShort(on) : b[3]}</span></div>`; }).join('')}</div>`;
+
+/* ---------- accroches autour de commit() ---------- */
+function fxSnapshot() { return R ? Object.fromEntries(R.weeks.map(w => [w.monday, w.min25 + w.min50])) : {}; }
+function fxAfter(prev) {
+  const gained = R.weeks.reduce((a, w) => a + Math.max(0, (w.min25 + w.min50) - (prev[w.monday] || 0)), 0);
+  if (gained > 0 && Object.keys(prev).length) {
+    const P = R.months[contractYm(E.ymOf(today()))].pay, ratio = P.brut ? P.netAvantIR / P.brut : 0.78;
+    celebrate(`💰 +${hm(gained)} d’heures sup · ≈ +${eur(gained / 60 * S.settings.tauxHoraire * (1 + S.settings.hs.maj25 / 100) * ratio)} net`);
+  }
+  checkBadges(true);
+}
+
+/* ---------- BILAN : graphiques, succès, Wrapped, carte ---------- */
+function chartBars(vals, labels, hi) {
+  const W = 340, H = 150, max = Math.max(...vals.map(v => v.v), 1), bw = W / vals.length;
+  return `<svg viewBox="0 0 ${W} ${H + 34}" class="chart">${vals.map((v, i) => {
+    const h = v.v / max * (H - 24), x = i * bw + bw * 0.16, w = bw * 0.68;
+    return `<rect x="${x}" y="${H - h}" width="${w}" height="${h}" rx="6" fill="var(--gold)" opacity="${v.future ? 0.35 : 1}"/><text x="${x + w / 2}" y="${H - h - 6}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--tx2)">${Math.round(v.v).toLocaleString('fr-FR')}</text><text x="${x + w / 2}" y="${H + 16}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--tx3)">${labels[i]}</text>`;
+  }).join('')}</svg>`;
+}
+function chartLine(pts, labels, color, unit) {
+  const W = 340, H = 120, max = Math.max(...pts, 1), n = pts.length;
+  if (n < 2) return '<div class="empty">Pas encore assez de données</div>';
+  const xy = pts.map((v, i) => [i / (n - 1) * (W - 20) + 10, H - v / max * (H - 40) - 6]);
+  const d = xy.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H + 26}" class="chart"><path d="${d} L${xy[n - 1][0]} ${H} L${xy[0][0]} ${H} Z" fill="${color}" opacity=".12"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${xy[n - 1][0]}" cy="${xy[n - 1][1]}" r="4" fill="${color}"/><text x="${Math.min(W - 4, xy[n - 1][0])}" y="${xy[n - 1][1] - 9}" text-anchor="end" font-size="11" font-weight="800" fill="var(--tx)">${unit(pts[n - 1])}</text>
+    <text x="10" y="${H + 18}" font-size="10" fill="var(--tx3)">${labels[0]}</text><text x="${W - 10}" y="${H + 18}" text-anchor="end" font-size="10" fill="var(--tx3)">${labels[n - 1]}</text></svg>`;
+}
+function stats() {
+  const t = today(), st = S.settings, cur = contractYm(E.ymOf(t));
+  let hours = 0, days = 0, longest = null, earliest = null, mondays = 0;
+  for (let k = st.contrat.debut; k <= t && k <= st.contrat.fin; k = E.addDays(k, 1)) {
+    const di = dayOf(k); if (!di.worked) continue;
+    hours += di.worked; days++;
+    if (!longest || di.worked > longest.m) longest = { k, m: di.worked };
+    di.segs.forEach(s => { const a = E.toMin(s[0]); if (earliest == null || a < earliest.m) earliest = { k, m: a, t: s[0] }; });
+    if (di.planMin === 0) mondays++;
+  }
+  const past = Object.values(R.months).filter(m => m.ym <= cur);
+  const best = past.slice().sort((a, b) => b.pay.net - a.pay.net)[0];
+  const hsMin = R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + w.min25 + w.min50, 0);
+  return {
+    hours, days, longest, earliest, mondays, best, hsMin,
+    hsBrut: R.weeks.filter(w => w.monday <= t).reduce((a, w) => a + (w.min25 * (1 + st.hs.maj25 / 100) + w.min50 * (1 + st.hs.maj50 / 100)) / 60 * st.tauxHoraire, 0), hsNet: hsNetCumul(),
+    tickets: past.reduce((a, m) => a + m.tickets, 0),
+    ticketsPat: past.reduce((a, m) => a + m.pay.ticketsPat, 0),
+    net: past.reduce((a, m) => a + m.pay.net, 0),
+    cp: R.cp.prisPasses, badges: Object.keys(S.badges || {}).length,
+  };
+}
+function openBilan() {
+  ui.sheet = { kind: 'bilan' };
+  const ms = Object.values(R.months), cur = contractYm(E.ymOf(today())), s = stats();
+  const weeks = R.weeks.filter(w => w.monday <= today());
+  let cum = 0; const hsPts = weeks.map(w => (cum += w.min25 + w.min50) / 60);
+  const cpPts = ms.map(m => { const k = m.ym + '-' + String(E.daysInMonth(m.ym)).padStart(2, '0'); const r2 = E.compute(S, { today: k < S.settings.contrat.fin ? k : S.settings.contrat.fin }); return Math.max(0, r2.cp.report + r2.cp.acquis - r2.cp.pris.filter(p => p.k <= k).length); });
+  openSheet(`<div class="sh"><div><h2 style="text-transform:none">Ton bilan</h2><div class="tiny">Depuis le ${dDate(S.settings.contrat.debut)}</div></div><button class="icbtn" data-a="closeSheet">${IC.x}</button></div>
+    <div class="btns"><button class="btn pri" data-a="wrapped">✨ Mon Wrapped</button><button class="btn" data-a="shareCard">📤 Carte du mois</button></div>
+    <div class="sec"><div class="lb">Net par mois</div><div class="card reqsum">${chartBars(ms.map(m => ({ v: m.pay.net, future: m.ym > cur })), ms.map(m => cap(MOISC[+m.ym.slice(5) - 1]).replace('.', '')))}<p class="tiny">En clair : mois prévus (estimation).</p></div></div>
+    <div class="sec"><div class="lb">Heures sup cumulées</div><div class="card reqsum">${chartLine(hsPts, weeks.map(w => 'S' + w.num), 'var(--green)', v => hm(v * 60))}</div></div>
+    <div class="sec"><div class="lb">Solde de congés (fin de mois)</div><div class="card reqsum">${chartLine(cpPts, ms.map(m => cap(MOISC[+m.ym.slice(5) - 1])), 'var(--blue)', v => nd(Math.round(v * 10) / 10) + ' j')}</div></div>
+    <div class="sec"><div class="lb">Tes heures sup en vrai · ${eur(s.hsNet)} net</div><div class="eqs">${equivHtml(s.hsNet)}</div></div>
+    <div class="sec"><div class="lb">Succès · ${s.badges}/${BADGES.length}</div>${badgesHtml()}</div>`);
+}
+
+/* ---------- image partageable (carte du mois, Wrapped) ---------- */
+function drawShareCard(o) {
+  const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c = cv.getContext('2d'), gold = '#e6bd6a', F = 'system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif';
+  const g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#16130c'); g.addColorStop(0.55, '#0b0b0d'); g.addColorStop(1, '#08080a');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const rg = c.createRadialGradient(W * 0.8, 120, 0, W * 0.8, 120, 700); rg.addColorStop(0, 'rgba(230,189,106,.28)'); rg.addColorStop(1, 'rgba(230,189,106,0)');
+  c.fillStyle = rg; c.fillRect(0, 0, W, H);
+  const gg = c.createLinearGradient(0, 0, 200, 200); gg.addColorStop(0, '#fbe2a4'); gg.addColorStop(1, '#a8721f');
+  c.save(); c.translate(140, 150); c.strokeStyle = gg; c.lineCap = 'round'; c.lineWidth = 16;
+  c.beginPath(); c.arc(0, 0, 44, (38 * Math.PI) / 180, (-38 * Math.PI) / 180 + 2 * Math.PI, false); c.stroke();
+  c.lineWidth = 11; c.beginPath(); c.moveTo(4, -70); c.lineTo(4, 70); c.stroke(); c.restore();
+  c.fillStyle = gold; c.font = `800 34px ${F}`; c.fillText('C E N T I M E', 220, 162);
+  c.fillStyle = 'rgba(245,245,247,.55)'; c.font = `600 34px ${F}`; c.fillText(o.kicker, 90, 330);
+  c.fillStyle = '#f5f5f7'; c.font = `800 92px ${F}`; c.fillText(o.title, 90, 430);
+  c.fillStyle = gold; c.font = `800 150px ${F}`; c.fillText(o.big, 86, 610);
+  c.fillStyle = 'rgba(245,245,247,.6)'; c.font = `600 36px ${F}`; c.fillText(o.bigLabel, 92, 670);
+  o.stats.slice(0, 6).forEach((s, i) => {
+    const x = 90 + (i % 2) * 460, y = 740 + Math.floor(i / 2) * 160;
+    c.fillStyle = 'rgba(255,255,255,.06)'; roundRect(c, x, y, 430, 145, 28); c.fill();
+    c.fillStyle = 'rgba(245,245,247,.55)'; c.font = `600 30px ${F}`; c.fillText(s[0], x + 32, y + 52);
+    c.fillStyle = '#f5f5f7'; c.font = `800 52px ${F}`; c.fillText(s[1], x + 32, y + 115);
+  });
+  c.fillStyle = 'rgba(245,245,247,.35)'; c.font = `600 28px ${F}`; c.fillText(o.footer || 'Heures · Congés · Salaire — au centime près', 90, H - 60);
+  return new Promise(res => cv.toBlob(res, 'image/png'));
+}
+function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+async function shareBlob(blob, name) {
+  const f = new File([blob], name, { type: 'image/png' });
+  try { if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; } } catch (e) { if (e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+async function shareMonthCard() {
+  const ym = contractYm(E.ymOf(today())), M = R.months[ym], P = M.pay;
+  const blob = await drawShareCard({ kicker: 'Mon mois', title: ymLabel(ym), big: n2(P.net) + ' €', bigLabel: 'net estimé ce mois-ci',
+    stats: [['Heures', hm(M.workedCal)], ['Heures sup', hm(M.min25 + M.min50)], ['Brut', eur(P.brut)], ['Tickets resto', String(M.tickets)], ['Congés dispo', nd(R.cp.solde) + ' j'], ['Fin du CDD', 'J-' + R.fin.joursRestants]] });
+  shareBlob(blob, 'centime-' + ym + '.png');
+}
+
+/* ---------- WRAPPED ---------- */
+function wrappedSlides() {
+  const s = stats(), st = S.settings, name = st.prenom || 'toi';
+  const eq = EQUIV.map(e => [e, s.hsNet / e[3]]).filter(x => x[1] >= 1);
+  const slides = [
+    ['#2a2010', '✨', 'Ton Centime Wrapped', `${cap(name)}, voici ton contrat chez ${esc(st.employeur)} en chiffres.`, `Du ${dDate(st.contrat.debut)} au ${dDate(today() < st.contrat.fin ? today() : st.contrat.fin)}`],
+    ['#13233a', '⏱️', `${hm(s.hours)}`, `de travail sur ${s.days} journées.`, `Soit ${nd(Math.round(s.hours / 60 / 24 * 10) / 10)} jours complets sans t’arrêter, nuit comprise.`],
+    s.longest ? ['#2b1630', '🏃', `${hm(s.longest.m)}`, `ta plus longue journée, le ${dLong(s.longest.k)}.`, s.earliest ? `Ton départ le plus matinal : ${fmtT(s.earliest.t)}, le ${dShort(s.earliest.k)}.` : ''] : null,
+    ['#10281e', '💰', `${hm(s.hsMin)}`, `d’heures sup, soit ${eur(s.hsBrut)} brut.`, eq.length ? `En vrai : ${eq.slice(0, 2).map(x => nd(Math.floor(x[1] * 10) / 10) + ' ' + (x[1] >= 2 ? x[0][2] : x[0][1])).join(' ou ')}.` : 'Les prochaines arrivent 😉'],
+    s.mondays ? ['#2e2410', '📅', `${s.mondays} lundi${s.mondays > 1 ? 's' : ''}`, 'travaillé(s) alors que c’est ton jour de repos.', 'Du pur bonus en heures sup.'] : null,
+    s.best ? ['#2a1a0e', '🏆', ymLabel(s.best.ym), `ton meilleur mois : ${eur(s.best.pay.net)} net.`, `Total encaissé : ${eur(s.net)} net.`] : null,
+    ['#2a1414', '🍽️', `${s.tickets} tickets`, `soit ${eur(s.tickets * st.tickets.valeur)} de repas.`, `Dont ${eur(s.ticketsPat)} offerts par ton employeur.`],
+    ['#0f2430', '🏖️', `${s.cp} jour${s.cp > 1 ? 's' : ''}`, 'de congés pris.', `Il t’en reste ${nd(R.cp.solde)} à poser.`],
+    ['#1d1a10', '🏅', `${s.badges}/${BADGES.length}`, 'succès débloqués.', 'Partage ton récap !', true],
+  ];
+  return slides.filter(Boolean);
+}
+let wrapTimer = null;
+function openWrapped() {
+  closeSheet();
+  const slides = wrappedSlides();
+  const el = document.createElement('div'); el.id = 'wrapped'; el.className = 'wrapped';
+  el.innerHTML = `<div class="wbars">${slides.map(() => '<i><b></b></i>').join('')}</div><button class="wx-close" data-a="wrapClose">${IC.x}</button><div class="wslide"></div>`;
+  document.body.appendChild(el);
+  let i = 0;
+  const show = n => {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    const s = slides[i];
+    el.style.background = `radial-gradient(120% 80% at 80% 0%, ${s[0]}, #08080a 70%)`;
+    el.querySelector('.wslide').innerHTML = `<div class="we">${s[1]}</div><div class="wt num">${s[2]}</div><div class="ws">${s[3]}</div><div class="wf">${s[4]}</div>${s[5] ? '<button class="btn pri" style="margin-top:28px;max-width:280px" data-a="wrapShare">📤 Partager mon récap</button>' : ''}`;
+    el.querySelectorAll('.wbars i').forEach((b, j) => { const f = b.firstChild; f.style.transition = 'none'; f.style.width = j < i ? '100%' : '0%'; if (j === i) { void f.offsetWidth; f.style.transition = 'width 5s linear'; f.style.width = '100%'; } });
+    clearTimeout(wrapTimer); if (i < slides.length - 1) wrapTimer = setTimeout(() => show(i + 1), 5000);
+    if (i === slides.length - 1) confetti(120);
+  };
+  el.addEventListener('click', e => { if (e.target.closest('[data-a]')) return; show(e.clientX < innerWidth / 3 ? i - 1 : i + 1); });
+  requestAnimationFrame(() => el.classList.add('on')); show(0);
+}
+async function shareWrapped() {
+  const s = stats();
+  const blob = await drawShareCard({ kicker: 'Mon Centime Wrapped', title: S.settings.employeur, big: hm(s.hours), bigLabel: `de travail · ${s.days} journées`,
+    stats: [['Heures sup', hm(s.hsMin)], ['Net encaissé', eur(s.net)], ['Plus longue journée', s.longest ? hm(s.longest.m) : '—'], ['Tickets resto', String(s.tickets)], ['Lundis bonus', String(s.mondays)], ['Succès', s.badges + '/' + BADGES.length]] });
+  shareBlob(blob, 'centime-wrapped.png');
+}
+
+/* ---------- RELEVÉ D'HEURES MENSUEL (PDF) ---------- */
+function buildReleve(ym) {
+  const st = S.settings, d = PDF.create().page(), W = d.W, M = 44;
+  const gold = [0.72, 0.53, 0.18], grey = [0.42, 0.42, 0.45], light = [0.988, 0.975, 0.95], line = [0.9, 0.9, 0.92];
+  const name = [st.prenom, (st.nom || '').toUpperCase()].filter(Boolean).join(' ') || 'Prénom NOM';
+  d.rect(0, 0, W, 7, { fill: gold });
+  d.text(M, 46, name, { bold: true, size: 11.5 }); d.text(M, 60, (st.poste || '') + ' · ' + [st.societe, st.employeur].filter(Boolean).join(' – '), { size: 9, color: grey });
+  d.text(W - M, 46, 'RELEVÉ D’HEURES', { bold: true, size: 15, align: 'right' }); d.text(W - M, 62, ymLabel(ym), { size: 11, color: gold, align: 'right', bold: true });
+  // tableau
+  const cols = [M, M + 92, M + 300, M + 360]; let y = 90;
+  d.rect(M, y, W - 2 * M, 18, { fill: [0.96, 0.95, 0.93] });
+  ['Jour', 'Horaires', 'Heures', 'Observations'].forEach((h, i) => d.text(cols[i] + 6, y + 12.5, h, { bold: true, size: 8.5, color: grey }));
+  y += 18;
+  const n = E.daysInMonth(ym); let totW = 0, totCP = 0, totAbs = 0, totTk = 0; const rh = 12.6;
+  const weekRow = w => { if (!w) return; d.rect(M, y, W - 2 * M, rh + 1, { fill: light }); d.text(cols[0] + 6, y + 9.2, `Semaine ${w.num}`, { bold: true, size: 8 }); d.text(cols[2] + 6, y + 9.2, hm(w.eff), { bold: true, size: 8 }); const hs = w.min25 + w.min50; d.text(cols[3] + 6, y + 9.2, hs ? `dont ${hm(hs)} sup${w.min50 ? ' (' + hm(w.min50) + ' à ' + st.hs.maj50 + ' %)' : ''} · payées en ${ymMonth(w.ym)}` : 'pas d’heures sup', { size: 7.5, color: hs ? [0.1, 0.5, 0.2] : grey }); y += rh + 1; };
+  for (let i = 1; i <= n; i++) {
+    const k = ym + '-' + String(i).padStart(2, '0'), di = dayOf(k);
+    if (y > 760) { d.page(); y = 50; }
+    let hor = '', obs = '';
+    if (di.type === 'travail') { hor = segTxt(di.segs) || '—'; if (!di.confirmed) obs = 'prévu (non confirmé)'; if (di.planMin === 0 && di.worked) obs = 'jour de repos travaillé'; if (di.worked > di.planMin && di.planMin) obs = '+' + hm(di.worked - di.planMin); if (S.days[k] && S.days[k].recupMin) obs = 'récup ' + hm(S.days[k].recupMin); if (S.days[k] && S.days[k].absMin) obs = 'absence ' + hm(S.days[k].absMin); }
+    else obs = di.type === 'hors' ? 'hors contrat' : (TYPES[di.type] || '') + (di.hol ? ' · ' + di.hol : '');
+    if (di.ticket) totTk++;
+    if (di.type === 'cp') totCP++;
+    if (di.unpaid) totAbs += di.unpaid;
+    totW += di.inC ? di.worked : 0;
+    const off = !di.worked;
+    d.text(cols[0] + 6, y + 9.2, cap(dShort(k)), { size: 8.2, color: off ? grey : [0.11, 0.11, 0.12], bold: !off });
+    d.text(cols[1] + 6, y + 9.2, hor, { size: 8.2 });
+    d.text(cols[2] + 6, y + 9.2, di.worked ? hm(di.worked) : '', { size: 8.2, bold: true });
+    d.text(cols[3] + 6, y + 9.2, obs, { size: 7.8, color: grey });
+    d.line(M, y + rh, W - M, y + rh, { color: line, lw: 0.4 });
+    y += rh;
+    if (E.dow(k) === 0 || i === n) weekRow(R.weeks.find(w => w.monday === E.mondayOf(k)));
+  }
+  // totaux
+  const Mo = R.months[ym];
+  y += 10; if (y > 700) { d.page(); y = 50; }
+  const tot = [['Heures effectuées', hm(totW)], ['Heures sup payées sur ce bulletin', Mo ? hm(Mo.min25 + Mo.min50) : '—'], ['Congés payés', totCP + ' j'], ['Tickets restaurant', String(totTk)]];
+  if (totAbs) tot.push(['Absences non payées', hm(totAbs)]);
+  d.rect(M, y, W - 2 * M, 18 + Math.ceil(tot.length / 2) * 17, { fill: light, stroke: [0.88, 0.82, 0.7], lw: 0.6, r: 6 });
+  tot.forEach((r, i) => { const x = M + 12 + (i % 2) * ((W - 2 * M) / 2), yy = y + 18 + Math.floor(i / 2) * 17; d.text(x, yy, r[0], { size: 8.5, color: grey }); d.text(x + (W - 2 * M) / 2 - 24, yy, r[1], { size: 9.5, bold: true, align: 'right' }); });
+  y += 28 + Math.ceil(tot.length / 2) * 17;
+  if (y + 70 > 800) { d.page(); y = 50; }
+  const bw = (W - 2 * M - 14) / 2;
+  [['LE SALARIÉ', name], ['L’EMPLOYEUR', st.destinataire || '']].forEach(([t, nm], i) => { const x = M + i * (bw + 14); d.rect(x, y, bw, 64, { stroke: [0.82, 0.82, 0.85], lw: 0.6, r: 6 }); d.text(x + 10, y + 15, t, { bold: true, size: 7.5, color: grey }); d.text(x + 10, y + 30, nm, { size: 9, bold: true }); d.text(x + 10, y + 52, 'Date et signature :', { size: 8, color: grey }); });
+  d.text(M, 826, 'Relevé établi le ' + dNum(today()) + ' avec Centime · heures sup comptées par semaine civile, seuil ' + st.hs.seuil25 + ' h', { size: 7, color: grey });
+  return d.output('Relevé d’heures ' + ymLabel(ym));
+}
+
+/* ---------- SIMULATEUR « ET SI… » ---------- */
+function openSim() {
+  const ym = contractYm(E.ymOf(today()));
+  ui.sheet = { kind: 'sim', sim: { ym, lundis: 1, hLundi: 7, hsSem: 0, abs: 0, prime: 0 } };
+  openSheet(sheetSim()); refreshSim();
+}
+function sheetSim() {
+  const s = ui.sheet.sim;
+  const num = (f, l, sub) => `<div class="fld"><label>${l}${sub ? `<small>${sub}</small>` : ''}</label><input type="text" inputmode="decimal" data-sim="${f}" value="${numIn(s[f])}"></div>`;
+  return `<div class="sh"><div><h2 style="text-transform:none">Et si… ?</h2><div class="tiny">Teste un scénario, rien n’est enregistré</div></div><button class="icbtn" data-a="closeSheet">${IC.x}</button></div>
+    <div class="fld" style="padding-top:0"><label>Mois</label><select data-sim="ym">${Object.keys(R.months).map(y => `<option value="${y}" ${y === s.ym ? 'selected' : ''}>${ymLabel(y)}</option>`).join('')}</select></div>
+    ${num('lundis', 'Lundis travaillés en plus', 'jours de repos → heures sup')}${num('hLundi', 'Heures par lundi')}
+    ${num('hsSem', 'Heures en plus par semaine', 'sur tes jours normaux')}${num('abs', 'Jours d’absence non payée')}${num('prime', 'Prime', '€ brut')}
+    <div class="card reqsum" id="simRes" style="margin-top:14px"></div>`;
+}
+function refreshSim() {
+  const el = document.getElementById('simRes'); if (!el || !ui.sheet || ui.sheet.kind !== 'sim') return;
+  const s = ui.sheet.sim, base = R.months[s.ym]; if (!base) return;
+  const S2 = clone(S), n = E.daysInMonth(s.ym);
+  let lundis = +s.lundis || 0, abs = +s.abs || 0;
+  const add = Math.round((+s.hLundi || 0) * 60), mk = m => String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  for (let i = 1; i <= n && (lundis > 0 || abs > 0); i++) {
+    const k = s.ym + '-' + String(i).padStart(2, '0'), di = E.dayInfo(S2, k);
+    if (!di.inC) continue;
+    if (lundis > 0 && di.planMin === 0 && E.dow(k) !== 0 && !di.worked && add > 0) { S2.days[k] = { type: 'travail', seg: [['09:00', mk(540 + add)]], ticket: add >= 330 ? 'oui' : 'non' }; lundis--; }
+    else if (abs > 0 && di.planMin > 0 && !di.hol && di.type === 'travail') { S2.days[k] = { type: 'absence' }; abs--; }
+  }
+  const hx = Math.round((+s.hsSem || 0) * 60);
+  if (hx > 0) {
+    const R0 = E.compute(S2);
+    R0.weeks.filter(w => w.ym === s.ym).forEach(w => {
+      const last = w.days.filter(d => d.inC && d.type === 'travail' && d.planMin > 0).pop(); if (!last) return;
+      const segs = clone(last.segs), l = segs[segs.length - 1]; l[1] = mk(E.toMin(l[1]) + hx);
+      S2.days[last.k] = Object.assign({}, S2.days[last.k] || { ticket: 'auto' }, { type: 'travail', seg: segs });
+    });
+  }
+  if (+s.prime) { const mo = S2.months[s.ym] || (S2.months[s.ym] = {}); mo.primes = (mo.primes || []).concat([{ label: 'Prime (simulation)', montant: +s.prime }]); }
+  const R2 = E.compute(S2), M2 = R2.months[s.ym], P1 = base.pay, P2 = M2.pay, dn = r2(P2.net - P1.net);
+  el.innerHTML = `<div class="reqbig" style="margin-top:0"><div><span class="tiny">Net actuel</span><b class="num">${n2(P1.net)} €</b></div><div><span class="tiny">Net simulé</span><b class="num gold">${n2(P2.net)} €</b></div><div><span class="tiny">Différence</span><b class="num ${dn >= 0 ? 'pos' : 'neg'}">${dn >= 0 ? '+' : ''}${n2(dn)} €</b></div></div>
+    <div class="rows" style="margin-top:10px"><div class="row"><span class="l">Brut</span><span class="v num">${eur(P1.brut)} → ${eur(P2.brut)}</span></div>
+    <div class="row"><span class="l">Heures sup du mois</span><span class="v num">${hm(base.min25 + base.min50)} → ${hm(M2.min25 + M2.min50)}</span></div>
+    <div class="row"><span class="l">Tickets resto</span><span class="v num">${base.tickets} → ${M2.tickets}</span></div></div>
+    <p class="tiny" style="margin-top:8px">Calcul avec le même moteur que ton bulletin (clôture au ${S.settings.clotureJour || 'dernier jour'}, cotisations, CSG, exonération des heures sup).</p>`;
+}
+
+/* ---------- ESTIMATION CHÔMAGE (barèmes Unédic au 1er juillet 2025, inchangés au 1er juillet 2026) ---------- */
+const ARE = { fixe: 13.18, mini: 32.13, plafond: 0.75, coefDuree: 0.75, dureeMin: 182, retraite: 0.03, seuilCSG: 59 };
+function chomage() {
+  const st = S.settings, F = R.fin;
+  const start = st.saisonDebut && st.saisonDebut < st.contrat.debut ? st.saisonDebut : st.contrat.debut;
+  const jours = E.dayDiff(start, st.contrat.fin) + 1;
+  const salRef = (+st.brutSaisonnier || 0) + F.brutContrat; // hors indemnités de congés et de précarité
+  const sjr = salRef / jours;
+  const brutJ = Math.min(ARE.plafond * sjr, Math.max(0.404 * sjr + ARE.fixe, 0.57 * sjr, ARE.mini));
+  const retr = brutJ - ARE.retraite * sjr >= ARE.mini ? ARE.retraite * sjr : 0;
+  const csg = brutJ >= ARE.seuilCSG ? (brutJ - retr) * 0.9825 * 0.067 : 0;
+  const netJ = brutJ - retr - csg;
+  const duree = Math.max(ARE.dureeMin, Math.floor(jours * ARE.coefDuree));
+  const differe = Math.min(30, Math.floor((F.iccp || 0) / sjr));
+  const debut = E.addDays(st.contrat.fin, 1 + differe + 7);
+  return { jours, salRef, sjr, brutJ, netJ, mois: netJ * 30, duree, differe, debut, ok: jours >= 130 };
+}
+
+/* ---------- BULLETIN LIGNE À LIGNE ---------- */
+const REEL = [['brut', 'Salaire brut', '€'], ['hs', 'Heures sup (heures)', 'h'], ['tickets', 'Tickets restaurant (nombre)', ''], ['retenues', 'Total des retenues', '€'], ['net', 'Net à payer', '€']];
+function reelCard(ym, P, M) {
+  const mo = S.months[ym] || {}, re = mo.reel || (mo.netReel != null ? { net: mo.netReel } : {});
+  const calc = { brut: P.brut, hs: r2((M.min25 + M.min50) / 60), tickets: M.tickets, retenues: P.retenues, net: P.net };
+  const filled = REEL.filter(f => re[f[0]] != null && re[f[0]] !== '');
+  const tips = [];
+  if (re.tickets != null && re.tickets !== calc.tickets) tips.push(`${Math.abs(re.tickets - calc.tickets)} ticket(s) d’écart : la paie est peut-être clôturée à une autre date que le ${S.settings.clotureJour || 'dernier jour'} → Réglages → Paie.`);
+  if (re.hs != null && Math.abs(re.hs - calc.hs) > 0.005) tips.push('Heures sup différentes : vérifie la semaine à cheval sur deux mois (clôture) ou une journée mal saisie.');
+  if (re.brut != null && Math.abs(re.brut - calc.brut) > 0.005 && (re.hs == null || Math.abs(re.hs - calc.hs) < 0.005)) tips.push('Brut différent avec les mêmes heures sup : une prime ou une absence manque ? Ajoute-la dans « Primes du mois ».');
+  if (re.net != null && Math.abs(re.net - calc.net) > 0.005 && re.brut != null && Math.abs(re.brut - calc.brut) < 0.005) tips.push('Même brut mais net différent : une cotisation a changé (prévoyance, mutuelle, taux). Envoie-moi le bulletin, je recale l’appli.');
+  return `<div class="card"><h3>Comparer avec ton vrai bulletin<span class="r">${filled.length ? filled.filter(f => Math.abs(+re[f[0]] - calc[f[0]]) < 0.005).length + '/' + filled.length + ' identiques' : 'recopie ta fiche'}</span></h3>
+    ${REEL.map(f => { const v = re[f[0]], has = v != null && v !== '', d = has ? r2(+v - calc[f[0]]) : 0;
+      return `<div class="fld"><label>${f[1]}<small>Centime : ${f[2] === '€' ? eur(calc[f[0]]) : nd(calc[f[0]]) + (f[2] ? ' ' + f[2] : '')}${has ? (Math.abs(d) < 0.005 ? ' · <span class="pos">✓ identique</span>' : ` · <span class="${d > 0 ? 'pos' : 'neg'}">écart ${d > 0 ? '+' : ''}${f[2] === '€' ? eur(d) : nd(d)}</span>`) : ''}</small></label><input type="text" inputmode="decimal" data-reel="${ym}.${f[0]}" value="${has ? numIn(v) : ''}" placeholder="—"></div>`; }).join('')}
+    ${tips.length ? `<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">${tips.map(x => `<div class="badge o" style="white-space:normal;line-height:1.35;padding:7px 10px;border-radius:10px">💡 ${esc(x)}</div>`).join('')}</div>` : ''}</div>`;
+}
+
+/* ---------- VERROUILLAGE (code + Face ID) ---------- */
+const sha = async s => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); };
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+let lockState = { pin: '', mode: 'unlock', first: '' }, hiddenAt = 0;
+function lockOn() { const L = S.settings.lock || {}; return L.mode && L.mode !== 'off' && L.pinHash; }
+function showLock(mode) {
+  if (document.getElementById('lock')) return;
+  lockState = { pin: '', mode: mode || 'unlock', first: '' };
+  const el = document.createElement('div'); el.id = 'lock'; el.className = 'lock';
+  document.body.appendChild(el); drawLock();
+  if (lockState.mode === 'unlock' && S.settings.lock.cred) setTimeout(faceUnlock, 300);
+}
+function drawLock(err) {
+  const el = document.getElementById('lock'); if (!el) return;
+  const m = lockState.mode, title = m === 'unlock' ? 'Centime est verrouillé' : m === 'set1' ? 'Choisis un code à 4 chiffres' : 'Confirme ton code';
+  el.innerHTML = `<img src="${ICON}" class="lk-logo" alt=""><div class="lk-t">${title}</div><div class="lk-d ${err ? 'shake' : ''}">${[0, 1, 2, 3].map(i => `<i class="${i < lockState.pin.length ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="lk-k">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-a="lkKey" data-v="${n}">${n}</button>`).join('')}
+    ${m === 'unlock' && S.settings.lock.cred ? `<button data-a="lkFace" class="lk-f">Face ID</button>` : m !== 'unlock' ? '<button data-a="lkCancel" class="lk-f">Annuler</button>' : '<span></span>'}<button data-a="lkKey" data-v="0">0</button><button data-a="lkDel" class="lk-f">⌫</button></div>
+    ${m === 'unlock' ? '<button class="lk-forgot" data-a="lkForgot">Code oublié ?</button>' : ''}`;
+}
+async function lockKey(v) {
+  if (lockState.pin.length >= 4) return;
+  lockState.pin += v; drawLock();
+  if (lockState.pin.length < 4) return;
+  const L = S.settings.lock, pin = lockState.pin;
+  if (lockState.mode === 'unlock') {
+    if (await sha(L.salt + pin) === L.pinHash) unlock(); else { lockState.pin = ''; drawLock(true); if (navigator.vibrate) navigator.vibrate(120); }
+  } else if (lockState.mode === 'set1') { lockState.first = pin; lockState.pin = ''; lockState.mode = 'set2'; setTimeout(drawLock, 150); }
+  else {
+    if (pin !== lockState.first) { lockState.pin = ''; lockState.mode = 'set1'; drawLock(true); toast('Les deux codes ne sont pas identiques'); return; }
+    L.salt = b64u(crypto.getRandomValues(new Uint8Array(12))); L.pinHash = await sha(L.salt + pin); L.mode = L.want === 'faceid' ? 'faceid' : 'pin';
+    unlock(); save(); render();
+    if (L.want === 'faceid') registerFace(); else toast('🔒 Code activé');
+  }
+}
+function unlock() { const el = document.getElementById('lock'); if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 300); } hiddenAt = 0; }
+async function registerFace() {
+  try {
+    if (!window.PublicKeyCredential) throw new Error('indisponible');
+    const cred = await navigator.credentials.create({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), rp: { name: 'Centime' }, user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'centime', displayName: 'Centime' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }], authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' }, timeout: 60000 } });
+    S.settings.lock.cred = b64u(cred.rawId); S.settings.lock.mode = 'faceid'; save(); render(); toast('🔒 Face ID activé (code en secours)');
+  } catch (e) { S.settings.lock.mode = 'pin'; save(); render(); toast('Face ID indisponible ici : le code reste actif'); }
+}
+async function faceUnlock() {
+  const L = S.settings.lock; if (!L.cred) return;
+  try { await navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{ type: 'public-key', id: unb64u(L.cred) }], userVerification: 'required', timeout: 60000 } }); unlock(); }
+  catch (e) { /* l'utilisateur tape son code */ }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (hiddenAt && Date.now() - hiddenAt > 2 * 60e3 && lockOn()) showLock(); });
+
+/* ---------- ASSISTANT GITHUB ---------- */
+const ghOwnerGuess = () => /\.github\.io$/i.test(location.hostname) ? location.hostname.split('.')[0] : '';
+function ghWizard() {
+  const g = S.settings.github, owner = g.owner || ghOwnerGuess(), repo = g.repo || 'centime-data';
+  const active = !!(ghCfg() && g.auto && g.last && sync.state !== 'err');
+  if (active) return `<div class="card"><h3>Sauvegarde GitHub<span class="r"><span class="badge g">✓ active</span></span></h3>
+    <div class="rows"><div class="row"><span class="l">Coffre privé</span><span class="v">${esc(g.owner)}/${esc(g.repo)}</span></div>
+    <div class="row"><span class="l">Dernière sauvegarde</span><span class="v">${new Date(g.last).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</span></div></div>
+    <p class="tiny" style="margin:6px 0 10px">Chaque saisie part toute seule sur GitHub quelques secondes après. Sur un nouveau téléphone : installe l’appli, refais l’étape 3, puis « Restaurer ».</p>
+    <div class="btns"><button class="btn" data-a="ghSave">Sauvegarder maintenant</button><button class="btn" data-a="ghLoad">Restaurer</button></div>
+    <details><summary>Réglages avancés</summary>${fTxt('github.owner', 'Utilisateur')}${fTxt('github.repo', 'Dépôt privé')}${fTxt('github.branch', 'Branche')}${fTxt('github.path', 'Fichier')}${fSw('github.auto', 'Sauvegarde automatique')}
+    <div class="btns" style="margin-top:8px"><button class="btn dang" data-a="ghOff">Déconnecter GitHub</button></div></details></div>`;
+  return `<div class="card"><h3>Sauvegarde GitHub<span class="r">${g.lastErr && sync.state === 'err' ? '<span class="neg">erreur</span>' : '3 étapes · 2 min'}</span></h3>
+    <p class="tiny" style="margin-bottom:10px">Tes saisies sont gardées dans un coffre privé sur ton compte GitHub : tu ne perds plus rien, même en changeant de téléphone.</p>
+    <div class="step"><b>1</b><div><div class="st-t">Crée ton coffre privé</div><div class="tiny">GitHub s’ouvre avec le nom « ${esc(repo)} » et « Private » déjà choisis : touche juste « Create repository ».</div>
+      <a class="btn sm" style="margin-top:8px" href="https://github.com/new?name=${encodeURIComponent(repo)}&visibility=private&description=${encodeURIComponent('Sauvegarde Centime')}" target="_blank" rel="noopener">Créer le coffre ↗</a></div></div>
+    <div class="step"><b>2</b><div><div class="st-t">Crée la clé d’accès</div><div class="tiny">Nom : Centime · Expiration : la plus longue · Repository access : <i>Only select repositories</i> → ${esc(repo)} · Permissions → Repository → <b>Contents : Read and write</b> → Generate token → copie la clé.</div>
+      <a class="btn sm" style="margin-top:8px" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Créer la clé ↗</a></div></div>
+    <div class="step"><b>3</b><div style="flex:1"><div class="st-t">Colle la clé ici</div>
+      <input class="inp" id="ghTok" type="password" placeholder="github_pat_…" autocomplete="off" style="margin-top:8px">
+      <div class="fld" style="border:0;padding:8px 0 0"><label>Compte GitHub</label><input type="text" id="ghOwn" value="${esc(owner)}" placeholder="ton-pseudo" autocapitalize="off" autocomplete="off"></div>
+      <button class="btn pri" style="margin-top:10px;width:100%" data-a="ghSetup">🔐 Activer la sauvegarde</button></div></div>
+    ${g.lastErr && sync.state === 'err' ? `<p class="tiny neg" style="margin-top:8px">Dernière erreur : ${esc(g.lastErr)}</p>` : ''}
+    ${g.token ? '<div class="btns" style="margin-top:10px"><button class="btn" data-a="ghLoad">Restaurer depuis GitHub</button></div>' : ''}</div>`;
+}
+async function ghSetup() {
+  const tok = (document.getElementById('ghTok') || {}).value || '', own = ((document.getElementById('ghOwn') || {}).value || '').trim();
+  if (!tok.trim() || !own) { toast('Colle la clé et indique ton compte GitHub'); return; }
+  Object.assign(S.settings.github, { token: tok.trim(), owner: own, repo: S.settings.github.repo || 'centime-data', branch: S.settings.github.branch || 'main', path: S.settings.github.path || 'centime-data.json', auto: true, lastErr: '' });
+  save(false);
+  await ghSave(true);
+  if (S.settings.github.last && sync.state === 'ok') { checkBadges(true); render(); }
+}
+
+/* ---------- après l'écran de chargement ---------- */
+function afterSplash() {
+  if (lockOn()) showLock();
+  if (!S.onboarded) { welcome(); return; }
+  const t = today(), ym = E.ymOf(t);
+  if (payDate(ym) === t && (S.fx || {}).payday !== ym && t >= S.settings.contrat.debut && t <= E.addDays(S.settings.contrat.fin, 31)) {
+    S.fx = Object.assign(S.fx || {}, { payday: ym }); save(false);
+    const M = R.months[contractYm(ym)];
+    setTimeout(() => celebrate('💸 Jour de paie ! ≈ ' + eur(M.pay.net) + ' net', true), lockOn() ? 1500 : 400);
+  }
+}
+
+/* ---------- actions ---------- */
+Object.assign(A, {
+  bilan() { openBilan(); },
+  wrapped() { openWrapped(); },
+  wrapClose() { clearTimeout(wrapTimer); const el = document.getElementById('wrapped'); if (el) { el.classList.remove('on'); setTimeout(() => el.remove(), 300); } },
+  wrapShare() { shareWrapped(); },
+  shareCard() { shareMonthCard(); },
+  releve(el) { const ym = el.dataset.ym; sharePdf(buildReleve(ym), 'Releve-heures-' + ym + '.pdf'); },
+  sim() { openSim(); },
+  accent(el) { S.settings.look = Object.assign(S.settings.look || {}, { accent: el.dataset.v }); commit(); },
+  wxRefresh() { loadWeather(true); toast('Météo mise à jour'); },
+  lockSet(el) {
+    const v = el.dataset.v, L = S.settings.lock;
+    if (v === 'off') { if (confirm('Désactiver le verrouillage ?')) { Object.assign(L, { mode: 'off', pinHash: '', salt: '', cred: '' }); save(); render(); toast('Verrouillage désactivé'); } return; }
+    if (v === 'faceid' && L.pinHash) { registerFace(); return; }
+    L.want = v; showLock('set1');
+  },
+  lkKey(el) { lockKey(el.dataset.v); },
+  lkDel() { lockState.pin = lockState.pin.slice(0, -1); drawLock(); },
+  lkFace() { faceUnlock(); },
+  lkCancel() { unlock(); },
+  lkForgot() {
+    if (!confirm('Code oublié : pour ta sécurité, il faut effacer les données de ce téléphone. Si ta sauvegarde GitHub est active, tu pourras tout restaurer ensuite (Réglages → Sauvegarde GitHub). Effacer maintenant ?')) return;
+    try { localStorage.removeItem(KEY); } catch (e) { } location.reload();
+  },
+  ghSetup() { ghSetup(); },
+  ghOff() { if (!confirm('Déconnecter GitHub ? Ta sauvegarde reste dans ton coffre.')) return; Object.assign(S.settings.github, { token: '', auto: false, last: null, lastErr: '' }); setSync(''); save(false); render(); },
+  renew() {
+    ui.sheet = { kind: 'renew' };
+    openSheet(`<div class="sh"><div><h2 style="text-transform:none">Renouvellement du CDD</h2><div class="tiny">Ton avenant fixe une nouvelle date de fin</div></div><button class="icbtn" data-a="closeSheet">${IC.x}</button></div>
+      <div class="fld"><label>Nouvelle date de fin</label><input type="date" id="renewDate" value="${S.settings.contrat.fin}"></div>
+      <p class="tiny" style="margin:8px 0 12px">Congés, fin de contrat, chômage et paie sont recalculés tout de suite.</p>
+      <div class="btns"><button class="btn pri" data-a="renewOk">Mettre à jour</button></div>`);
+  },
+  renewOk() { const v = document.getElementById('renewDate').value; if (!v || v < S.settings.contrat.debut) { toast('Date invalide'); return; } S.settings.contrat.fin = v; closeSheet(); commit('Contrat prolongé jusqu’au ' + dDate(v)); },
+});
+
+/* ---------- champs propres aux extras ---------- */
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.sim != null && ui.sheet && ui.sheet.kind === 'sim') { ui.sheet.sim[el.dataset.sim] = el.dataset.sim === 'ym' ? el.value : parseNum(el.value); refreshSim(); }
+  else if (el.dataset.reel) { const [ym, f] = el.dataset.reel.split('.'), mo = S.months[ym] || (S.months[ym] = {}); mo.reel = mo.reel || {}; if (mo.netReel != null && mo.reel.net == null) mo.reel.net = mo.netReel; delete mo.netReel; mo.reel[f] = el.value.trim() === '' ? null : parseNum(el.value); commit(); }
+});
+document.addEventListener('input', e => { const el = e.target; if (el.dataset.sim != null && el.dataset.sim !== 'ym' && ui.sheet && ui.sheet.kind === 'sim') { ui.sheet.sim[el.dataset.sim] = parseNum(el.value); refreshSim(); } });
+
+/* ---------- démarrage ---------- */
+recompute();
+checkBadges(false);
+render();
+splash();
+loadWeather();
+setInterval(() => loadWeather(), 30 * 60e3);
 
 </script>
 </body>
