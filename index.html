@@ -233,6 +233,13 @@ details[open] summary::after{content:" ⌄"}
 .updbar{position:fixed;left:12px;right:12px;bottom:calc(var(--sab) + 84px);z-index:30;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-radius:16px;
   background:linear-gradient(180deg,var(--gold),var(--gold2));color:var(--goldtx);font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:fade .3s ease;max-width:616px;margin:0 auto}
 .updbar b{background:rgba(0,0,0,.18);padding:6px 10px;border-radius:10px;white-space:nowrap}
+.reqrow{width:100%;text-align:left;font:inherit;color:inherit}
+.reqsum{box-shadow:none;margin:0}
+.reqbig{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.reqbig>div{background:var(--card2);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.reqbig b{font-size:19px;font-weight:800;letter-spacing:-.02em}
+textarea.inp{min-height:84px;resize:vertical;line-height:1.4;padding:10px}
+select.inp{-webkit-appearance:none;appearance:none}
 /* ===== écran de chargement ===== */
 #splash{position:fixed;inset:0;z-index:100;background:#08080a;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#f5f5f7;
   transition:opacity .55s ease,transform .55s cubic-bezier(.2,.8,.2,1),filter .55s ease}
@@ -374,7 +381,13 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
   const W = [['09:30', '12:30'], ['15:00', '19:00']];
   const defaults = () => ({
     prenom: '',
+    nom: '',
+    poste: 'Livreur / magasinier',
     employeur: 'Cosy Maison',
+    societe: 'Cerdagne Meubles SAS',
+    adresseEmployeur: '2 rue des Isards, 66800 Saillagouse',
+    destinataire: 'La Direction',
+    ville: 'Saillagouse',
     contrat: { debut: '2026-10-01', fin: '2027-03-27', type: 'CDD' },
     tauxHoraire: 12.61,
     heuresMensuelles: 151.67,
@@ -396,7 +409,7 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     schema: 2,
     github: { owner: '', repo: '', branch: 'main', path: 'centime-data.json', token: '', auto: false, last: null },
   });
-  const newState = () => ({ v: 1, settings: defaults(), days: {}, months: {}, clock: null });
+  const newState = () => ({ v: 1, settings: defaults(), days: {}, months: {}, requests: [], clock: null });
 
   /* ---------- journée ---------- */
   function dayInfo(S, k) {
@@ -414,8 +427,10 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     else type = 'repos';
     if (hol && planMin > 0 && type === 'repos') type = 'ferie';
     const worked = type === 'travail' ? sumSeg(segs) : 0;
-    const paidAbs = (type === 'cp' || type === 'recup' || type === 'ferie' || (hol && (type === 'maladie' || type === 'absence'))) ? planMin : 0;
-    const unpaid = (type === 'maladie' || type === 'absence') && !hol ? planMin : 0;
+    // evt = absence autorisée payée (événement familial…) ; recupMin / absMin = quelques heures d'absence dans une journée travaillée
+    let paidAbs = (type === 'cp' || type === 'recup' || type === 'evt' || type === 'ferie' || (hol && (type === 'maladie' || type === 'absence'))) ? planMin : 0;
+    let unpaid = (type === 'maladie' || type === 'absence') && !hol ? planMin : 0;
+    if (type === 'travail' && e) { paidAbs += +e.recupMin || 0; unpaid += +e.absMin || 0; }
     let ticket = false;
     if (st.tickets.actif && type === 'travail') {
       const o = e && e.ticket;
@@ -683,6 +698,115 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
 })();
 if (typeof module !== 'undefined') module.exports = Engine;
 
+/* ============================================================
+   CENTIME — mini générateur PDF (A4, Helvetica, accents français)
+   Aucun réseau, aucune bibliothèque : le PDF est écrit octet par octet.
+   ============================================================ */
+const PDF = (() => {
+  const WID = {"Helvetica":[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,0,222,556,333,1000,556,556,333,1000,667,333,1000,0,611,0,0,222,222,333,333,350,556,1000,333,1000,500,333,944,0,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500],"Helvetica-Bold":[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,556,0,278,556,500,1000,556,556,333,1000,667,333,1000,0,611,0,0,278,278,500,500,350,556,1000,333,1000,556,333,944,0,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556]};
+  // caractères Windows-1252 hors Latin-1
+  const MAP = { '€': 0x80, '‚': 0x82, '„': 0x84, '…': 0x85, '‰': 0x89, 'Š': 0x8a, '‹': 0x8b, 'Œ': 0x8c, '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94,
+    '•': 0x95, '–': 0x96, '—': 0x97, '™': 0x99, 'š': 0x9a, '›': 0x9b, 'œ': 0x9c, 'Ÿ': 0x9f, ' ': 0xa0, ' ': 0x20, '→': 0x96, '⇄': 0x2f };
+  const codes = s => {
+    const out = [];
+    for (const ch of String(s == null ? '' : s)) {
+      const c = ch.codePointAt(0);
+      if (MAP[ch] != null) out.push(MAP[ch]);
+      else if (c >= 32 && c <= 255 && !(c >= 0x7f && c <= 0x9f)) out.push(c);
+      else if (c === 9 || c === 10 || c === 13) out.push(32);
+      else out.push(63);
+    }
+    return out;
+  };
+  const width = (s, bold, size) => codes(s).reduce((a, c) => a + (WID[bold ? 'Helvetica-Bold' : 'Helvetica'][c - 32] || 556), 0) * size / 1000;
+  const esc = s => codes(s).map(c => (c === 40 || c === 41 || c === 92) ? '\\' + String.fromCharCode(c) : (c < 32 || c > 126) ? '\\' + c.toString(8).padStart(3, '0') : String.fromCharCode(c)).join('');
+  const wrap = (s, bold, size, maxW) => {
+    const lines = [];
+    String(s == null ? '' : s).split('\n').forEach(par => {
+      let cur = '';
+      par.split(' ').forEach(word => {
+        const t = cur ? cur + ' ' + word : word;
+        if (width(t, bold, size) <= maxW || !cur) cur = t; else { lines.push(cur); cur = word; }
+      });
+      lines.push(cur);
+    });
+    return lines;
+  };
+  const f = n => (Math.round(n * 100) / 100).toString();
+
+  function create() {
+    const Wp = 595.28, H = 841.89, pages = [];
+    let ops = null;
+    const col = (c, stroke) => c.map(v => f(v)).join(' ') + (stroke ? ' RG' : ' rg');
+    const api = {
+      W: Wp, H,
+      page() { ops = []; pages.push(ops); return api; },
+      text(x, y, s, o = {}) {
+        const size = o.size || 10, bold = !!o.bold, w = width(s, bold, size);
+        const X = o.align === 'right' ? x - w : o.align === 'center' ? x - w / 2 : x;
+        ops.push(`BT /${bold ? 'F2' : 'F1'} ${f(size)} Tf ${col(o.color || [0.11, 0.11, 0.12])} ${f(X)} ${f(H - y)} Td (${esc(s)}) Tj ET`);
+        return w;
+      },
+      // paragraphe : renvoie le y sous le dernier trait
+      para(x, y, s, o = {}) {
+        const size = o.size || 10, lead = o.lead || size * 1.45;
+        wrap(s, o.bold, size, o.width || 400).forEach((ln, i) => api.text(x, y + i * lead, ln, o));
+        return y + wrap(s, o.bold, size, o.width || 400).length * lead;
+      },
+      rect(x, y, w, h, o = {}) {
+        const r = o.r || 0;
+        let p;
+        if (r) {
+          const k = 0.5523 * r, X = x, Y = H - y - h;
+          p = `${f(X + r)} ${f(Y)} m ${f(X + w - r)} ${f(Y)} l ${f(X + w - r + k)} ${f(Y)} ${f(X + w)} ${f(Y + r - k)} ${f(X + w)} ${f(Y + r)} c ` +
+            `${f(X + w)} ${f(Y + h - r)} l ${f(X + w)} ${f(Y + h - r + k)} ${f(X + w - r + k)} ${f(Y + h)} ${f(X + w - r)} ${f(Y + h)} c ` +
+            `${f(X + r)} ${f(Y + h)} l ${f(X + r - k)} ${f(Y + h)} ${f(X)} ${f(Y + h - r + k)} ${f(X)} ${f(Y + h - r)} c ` +
+            `${f(X)} ${f(Y + r)} l ${f(X)} ${f(Y + r - k)} ${f(X + r - k)} ${f(Y)} ${f(X + r)} ${f(Y)} c h`;
+        } else p = `${f(x)} ${f(H - y - h)} ${f(w)} ${f(h)} re`;
+        ops.push(`q ${o.fill ? col(o.fill) + ' ' : ''}${o.stroke ? col(o.stroke, true) + ' ' + f(o.lw || 0.6) + ' w ' : ''}${p} ${o.fill && o.stroke ? 'B' : o.fill ? 'f' : 'S'} Q`);
+      },
+      line(x1, y1, x2, y2, o = {}) {
+        ops.push(`q ${col(o.color || [0.85, 0.85, 0.85], true)} ${f(o.lw || 0.6)} w ${f(x1)} ${f(H - y1)} m ${f(x2)} ${f(H - y2)} l S Q`);
+      },
+      check(x, y, size, on) {
+        api.rect(x, y, size, size, { stroke: [0.45, 0.45, 0.48], lw: 0.8, r: 1.5 });
+        if (on) ops.push(`q ${col([0.11, 0.11, 0.12], true)} 1.4 w ${f(x + size * 0.2)} ${f(H - y - size * 0.55)} m ${f(x + size * 0.42)} ${f(H - y - size * 0.78)} l ${f(x + size * 0.82)} ${f(H - y - size * 0.22)} l S Q`);
+      },
+      width, wrap,
+      output(title) {
+        const objs = [];
+        const font = n => `<< /Type /Font /Subtype /Type1 /BaseFont /${n} /Encoding /WinAnsiEncoding >>`;
+        objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+        objs[3] = font('Helvetica'); objs[4] = font('Helvetica-Bold');
+        let n = 5; const kids = [];
+        pages.forEach(p => {
+          const content = p.join('\n'), pid = n++, cid = n++;
+          kids.push(pid + ' 0 R');
+          objs[pid] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${Wp} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${cid} 0 R >>`;
+          objs[cid] = `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
+        });
+        objs[2] = `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pages.length} >>`;
+        const d = new Date(), p2 = x => String(x).padStart(2, '0');
+        const info = n++;
+        objs[info] = `<< /Title (${esc(title)}) /Producer (Centime) /Creator (Centime) /CreationDate (D:${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}) >>`;
+        let out = '%PDF-1.4\n%âãÏÓ\n';
+        const off = [];
+        for (let i = 1; i < n; i++) { off[i] = out.length; out += `${i} 0 obj\n${objs[i]}\nendobj\n`; }
+        const xref = out.length;
+        out += `xref\n0 ${n}\n0000000000 65535 f \n`;
+        for (let i = 1; i < n; i++) out += String(off[i]).padStart(10, '0') + ' 00000 n \n';
+        out += `trailer\n<< /Size ${n} /Root 1 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+        const bytes = new Uint8Array(out.length);
+        for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xff;
+        return bytes;
+      },
+    };
+    return api;
+  }
+  return { create, width, wrap, codes };
+})();
+if (typeof module !== 'undefined') module.exports = PDF;
+
 </script>
 <script>
 const ICON = "data:image/png;base64,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";
@@ -692,12 +816,12 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.3';
+const VERSION = '1.4';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 const JC = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
-const TYPES = { travail: 'Travail', cp: 'Congé payé', repos: 'Repos', maladie: 'Maladie', absence: 'Absence', recup: 'Récup', ferie: 'Férié', hors: 'Hors contrat' };
+const TYPES = { travail: 'Travail', cp: 'Congé payé', repos: 'Repos', maladie: 'Maladie', absence: 'Absence', recup: 'Récup', evt: 'Absence payée', ferie: 'Férié', hors: 'Hors contrat' };
 const DEFSEG = [['09:30', '12:30'], ['15:00', '19:00']];
 
 const IC = {
@@ -709,6 +833,7 @@ const IC = {
   stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>',
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
 };
 
@@ -726,9 +851,10 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const ymLabel = ym => cap(MOIS[+ym.slice(5) - 1]) + ' ' + ym.slice(0, 4);
 const ymShort = ym => cap(MOISC[+ym.slice(5) - 1]) + ' ' + ym.slice(2, 4);
 const ymMonth = ym => MOIS[+ym.slice(5) - 1];
-const dLong = k => { const d = E.fromKey(k); return JOURS[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MOIS[d.getUTCMonth()]; };
-const dShort = k => { const d = E.fromKey(k); return JC[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MOISC[d.getUTCMonth()]; };
-const dDate = k => { const d = E.fromKey(k); return d.getUTCDate() + ' ' + MOIS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
+const dNumFr = n => n === 1 ? '1er' : String(n);
+const dLong = k => { const d = E.fromKey(k); return JOURS[d.getUTCDay()] + ' ' + dNumFr(d.getUTCDate()) + ' ' + MOIS[d.getUTCMonth()]; };
+const dShort = k => { const d = E.fromKey(k); return JC[d.getUTCDay()] + ' ' + dNumFr(d.getUTCDate()) + ' ' + MOISC[d.getUTCMonth()]; };
+const dDate = k => { const d = E.fromKey(k); return dNumFr(d.getUTCDate()) + ' ' + MOIS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
 const fmtT = t => t.replace(/^0(\d)/, '$1').replace(':', 'h');
 const segTxt = segs => (segs || []).filter(s => s[0] && s[1]).map(s => fmtT(s[0]) + '–' + fmtT(s[1])).join(' · ');
 const nowHM = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
@@ -754,7 +880,7 @@ function hydrate(j) {
   s.settings = merge(s.settings, old);
   // v1.3 : clôture de paie au 26 (déduite du bulletin de septembre) pour les données créées avant
   if (!old.schema) { if (!old.clotureJour) s.settings.clotureJour = 26; s.settings.schema = 2; }
-  s.days = j.days || {}; s.months = j.months || {}; s.clock = j.clock || null; s.onboarded = !!j.onboarded;
+  s.days = j.days || {}; s.months = j.months || {}; s.requests = Array.isArray(j.requests) ? j.requests : []; s.clock = j.clock || null; s.onboarded = !!j.onboarded;
   return s;
 }
 function load() {
@@ -921,6 +1047,7 @@ function vHours() {
         case 'maladie': cls += ' maladie'; tx = 'Mal.'; break;
         case 'absence': cls += ' absence'; tx = 'Abs.'; break;
         case 'recup': cls += ' recup'; tx = 'Récup'; break;
+        case 'evt': cls += ' recup'; tx = 'Payée'; break;
         case 'repos': cls += ' repos'; tx = di.hol ? '★' : ''; break;
         default: cls += ' hors';
       }
@@ -1070,7 +1197,10 @@ function vCP() {
     <div class="row tot"><span class="l">Solde</span><span class="v num gold">${nd(C.solde)} j</span></div></div>
     <p class="tiny" style="margin-top:8px">+${st.cp.mode === 'ouvres' ? '2,08' : '2,5'} jours par mois. Total en fin de contrat : ${nd(C.acquisFin)} j, arrondis à ${C.acquisFinArrondi} j (arrondi légal au jour supérieur).</p></div>`;
 
-  h += `<div class="card"><h3>Poser des congés</h3>
+  h += `<div class="card"><h3>Mes demandes<span class="r">lettre PDF</span></h3>
+    <div class="rows">${S.requests.slice().reverse().map(q => { const stt = REQ_STATUS[q.status] || REQ_STATUS.brouillon; return `<button class="row reqrow" data-a="rOpen" data-id="${q.id}"><span class="l"><b>${REQ_TYPES[q.type]}</b><br><span class="tiny">${reqPeriod(q)}${q.applied ? ' · dans le calendrier' : ''}</span></span><span class="v"><span class="badge ${stt[1]}">${stt[0]}</span></span></button>`; }).join('') || '<div class="empty">Congés, récup, échange de jour, absence : remplis les dates, Centime calcule le reste et prépare la lettre.</div>'}</div>
+    <div class="btns" style="margin-top:10px"><button class="btn pri" data-a="rNew">${IC.doc} Nouvelle demande</button></div></div>`;
+  h += `<div class="card"><h3>Poser des congés directement</h3>
     <div class="fld" style="padding-top:0"><label>Du</label><input type="date" id="cpFrom" value="${t}"></div>
     <div class="fld"><label>Au (inclus)</label><input type="date" id="cpTo" value="${t}"></div>
     <div class="btns" style="margin-top:8px"><button class="btn pri" data-a="cpRange">Poser ces congés</button></div>
@@ -1118,6 +1248,10 @@ function vSettings(embedded) {
     <div class="fld"><label>Apparence</label><div class="seg" style="width:190px">${[['auto', 'Auto'], ['dark', 'Sombre'], ['light', 'Clair']].map(o => `<button data-a="theme" data-v="${o[0]}" class="${st.theme === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div></div></div>`;
 
   const full = r2(st.tauxHoraire * st.heuresMensuelles);
+  h += `<div class="card"><h3>Pour tes demandes PDF</h3>
+    ${fTxt('nom', 'Nom de famille', 'écrit sur tes demandes', 'Nom')}${fTxt('poste', 'Poste')}
+    ${fTxt('destinataire', 'Destinataire', 'ex. Madame la Présidente', 'La Direction')}${fTxt('societe', 'Société')}
+    ${fTxt('adresseEmployeur', 'Adresse de l\'employeur')}${fTxt('ville', 'Fait à')}</div>`;
   h += `<div class="card"><h3>Contrat<span class="r">${esc(st.employeur)}</span></h3>
     ${fDate('contrat.debut', 'Début')}${fDate('contrat.fin', 'Fin')}
     ${fNum('tauxHoraire', 'Taux horaire brut', '€ / heure')}${fNum('heuresMensuelles', 'Heures mensualisées', '35 h × 52 / 12')}
@@ -1197,13 +1331,14 @@ function openDay(k) {
 }
 function sheetDay() {
   const { k, draft } = ui.sheet, di = dayOf(k);
-  const types = [['travail', 'Travail'], ['cp', 'Congé'], ['repos', di.hol ? 'Férié' : 'Repos'], ['maladie', 'Maladie'], ['absence', 'Absence'], ['recup', 'Récup']];
+  const types = [['travail', 'Travail'], ['cp', 'Congé'], ['repos', di.hol ? 'Férié' : 'Repos'], ['maladie', 'Maladie'], ['absence', 'Absence'], ['recup', 'Récup'], ['evt', 'Abs. payée']];
   const plan = di.plan;
   let h = `<div class="sh"><div><h2>${dLong(k)}</h2><div class="tiny"><span class="badge" style="margin:4px 6px 4px 0">Semaine ${E.isoWeek(k)}</span>${di.hol ? '<span class="badge p">' + di.hol + '</span> ' : ''}${plan.length ? 'Prévu : ' + segTxt(plan) + ' (' + hm(di.planMin) + ')' : 'Jour de repos prévu'}</div></div><button class="icbtn" data-a="closeSheet">${IC.x}</button></div>
     <div class="seg types">${types.map(t => `<button data-a="dType" data-v="${t[0]}" class="${draft.type === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div>`;
   if (draft.type === 'travail') {
     h += `<div class="sec"><div class="lb">Plages horaires</div><div class="slots">${draft.seg.map((s, i) => `<div class="slot"><input type="time" data-slot="${i}" data-p="0" value="${s[0] || ''}"><span class="ar">→</span><input type="time" data-slot="${i}" data-p="1" value="${s[1] || ''}"><button class="del" data-a="dDel" data-i="${i}" aria-label="Supprimer">${IC.x}</button></div>`).join('') || '<div class="empty">Aucune plage : 0 h travaillée</div>'}</div>
       <p class="tiny neg" id="dWarn" style="margin-top:8px;font-weight:700"></p>
+      ${draft.recupMin ? '<p class="tiny" style="margin-top:6px;color:var(--blue);font-weight:700">+ ' + hm(draft.recupMin) + ' d\'absence payée (demande acceptée)</p>' : ''}${draft.absMin ? '<p class="tiny" style="margin-top:6px;color:var(--orange);font-weight:700">+ ' + hm(draft.absMin) + ' d\'absence non payée (demande acceptée)</p>' : ''}
       ${!plan.length && S.settings.hs.reposEnHS ? '<p class="tiny" style="margin-top:8px;color:var(--green);font-weight:700">Jour de repos : toutes ces heures comptent en heures sup (+' + S.settings.hs.maj25 + ' %), sauf si tu as sauté un jour prévu cette semaine.</p>' : ''}
       <div class="qk"><button data-a="dAdd">+ Plage</button><button data-a="dQuick" data-v="plan">Horaire prévu</button><button data-a="dQuick" data-v="-15">−15 min</button><button data-a="dQuick" data-v="15">+15 min</button><button data-a="dQuick" data-v="30">+30 min</button><button data-a="dQuick" data-v="60">+1 h</button></div></div>
       <div class="sec"><div class="lb">Ticket restaurant</div><div class="seg">${[['auto', 'Auto'], ['oui', 'Oui'], ['non', 'Non']].map(o => `<button data-a="dTicket" data-v="${o[0]}" class="${draft.ticket === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div><p class="tiny" style="margin-top:6px" id="dTick"></p></div>`;
@@ -1214,6 +1349,7 @@ function sheetDay() {
       maladie: `Arrêt maladie : retenue de ${hm(di.planMin)} sur le salaire (méthode des heures réelles). Les indemnités de la Sécu arrivent à part.`,
       absence: `Absence non rémunérée : retenue de ${hm(di.planMin)} sur le salaire.`,
       recup: 'Récupération / repos compensateur : payé, sans compter comme travail effectif.',
+      evt: 'Absence autorisée et payée (événement familial…) : salaire maintenu.',
     }[draft.type];
     h += `<div class="sec"><p class="help">${msg}</p></div>`;
   }
@@ -1222,6 +1358,11 @@ function sheetDay() {
     <div class="btns" style="margin-top:14px"><button class="btn pri" data-a="dSave">Enregistrer</button></div>
     ${ui.sheet.existed ? '<div class="btns" style="margin-top:8px"><button class="btn ghost" data-a="dReset">Revenir à l\'horaire prévu</button></div>' : ''}`;
   return h;
+}
+function refreshSheetReq() {
+  if (!ui.sheet || ui.sheet.kind !== 'req') return;
+  const s = document.getElementById('sheet'), y = s.scrollTop;
+  s.innerHTML = '<div class="grab"></div>' + sheetReq(); s.scrollTop = y; refreshReqSum();
 }
 function refreshDayTotals() {
   if (!ui.sheet || ui.sheet.kind !== 'day') return;
@@ -1275,12 +1416,308 @@ function welcome() {
     <div class="btns" style="margin-top:12px"><button class="btn pri" data-a="welcomeGo">C'est parti</button></div></div>`);
 }
 
+
+/* ---------- DEMANDES : congés, récup, échange de jour, autre absence ---------- */
+const REQ_TYPES = { cp: 'Congés payés', recup: 'Récupération', echange: 'Échange de jour', autre: 'Autre absence' };
+const REQ_TITLES = { cp: 'Demande de congés payés', recup: 'Demande de récupération d’heures', echange: 'Demande d’échange de jour de repos', autre: 'Demande d’autorisation d’absence' };
+const REQ_STATUS = { brouillon: ['Brouillon', ''], envoyee: ['Envoyée', 'b'], acceptee: ['Acceptée', 'g'], refusee: ['Refusée', 'r'] };
+const MOTIFS = [
+  ['rdv', 'Rendez-vous / démarche', false],
+  ['mariage', 'Mariage ou PACS (4 jours)', true],
+  ['naissance', 'Naissance ou adoption (3 jours)', true],
+  ['mariageEnfant', 'Mariage d’un enfant (1 jour)', true],
+  ['deces', 'Décès d’un proche', true],
+  ['sanssolde', 'Congé sans solde', false],
+  ['autre', 'Autre motif', false],
+];
+const motifLabel = q => q.motif === 'autre' ? (q.motifTxt || 'autre motif') : (MOTIFS.find(m => m[0] === q.motif) || MOTIFS[0])[1].replace(/ \(.*\)$/, '');
+const dY = k => cap(dLong(k)) + ' ' + k.slice(0, 4);
+const dNum = k => k.slice(8) + '/' + k.slice(5, 7) + '/' + k.slice(0, 4);
+const isWorkday = k => { const di = dayOf(k); return di.inC && di.planMin > 0 && !di.hol; };
+const offTypes = ['cp', 'recup', 'evt', 'maladie', 'absence'];
+function prevWorkday(k) {
+  for (let i = 1; i < 30; i++) { const p = E.addDays(k, -i), di = dayOf(p); if (!di.inC) return null; if (di.planMin > 0 && !di.hol && !offTypes.includes(di.type)) return p; }
+  return null;
+}
+function nextWorkday(k) {
+  for (let i = 1; i < 30; i++) { const p = E.addDays(k, i), di = dayOf(p); if (!di.inC) return null; if (di.planMin > 0 && !di.hol && !offTypes.includes(di.type)) return p; }
+  return null;
+}
+function segsWindow(segs, a, b) { const A = E.toMin(a), B = E.toMin(b); if (A == null || B == null || B <= A) return 0; return (segs || []).reduce((t, x) => t + Math.max(0, Math.min(B, E.toMin(x[1])) - Math.max(A, E.toMin(x[0]))), 0); }
+function segsMinus(segs, a, b) {
+  const A = E.toMin(a), B = E.toMin(b), out = [];
+  (segs || []).forEach(x => { const s0 = E.toMin(x[0]), s1 = E.toMin(x[1]); if (B <= s0 || A >= s1) out.push(x.slice()); else { if (A > s0) out.push([x[0], a]); if (B < s1) out.push([b, x[1]]); } });
+  return out;
+}
+const daySegs = k => (S.days[k] && S.days[k].type === 'travail') ? S.days[k].seg : dayOf(k).plan;
+function reqPeriod(q) {
+  if (q.type === 'echange') return `${dShort(q.from)} ⇄ ${dShort(q.to)}`;
+  if (q.partial && q.type !== 'cp') return `${dShort(q.from)} · ${fmtT(q.hStart)}–${fmtT(q.hEnd)}`;
+  return q.from === q.to ? dShort(q.from) : `${dShort(q.from)} → ${dShort(q.to)}`;
+}
+function newReq(type) {
+  const t = today(), st = S.settings;
+  let from = t < st.contrat.debut ? st.contrat.debut : t;
+  const nx = isWorkday(from) ? from : nextWorkday(from) || from;
+  const q = { id: 'r' + Date.now().toString(36), type: type || 'cp', from: nx, to: nx, partial: false, hStart: '15:00', hEnd: '19:00', motif: 'rdv', motifTxt: '', paid: false, comment: '', status: 'brouillon', created: t, applied: false };
+  if (q.type === 'echange') setEchangeDefaults(q);
+  return q;
+}
+function setEchangeDefaults(q) {
+  if (!isWorkday(q.from)) q.from = nextWorkday(q.from) || q.from;
+  let mon = E.mondayOf(q.from); if (mon < today()) mon = E.addDays(mon, 7);
+  q.to = mon;
+}
+function reqCalc(q) {
+  const st = S.settings, r = { rows: [], warn: [], sched: [], n: 0, min: 0, ok: true };
+  const deb = st.contrat.debut, fin = st.contrat.fin;
+  if (q.type === 'echange') {
+    const a = q.from, b = q.to;
+    if (!a || !b) { r.warn.push('Choisis les deux dates.'); r.ok = false; return r; }
+    const da = dayOf(a), db = dayOf(b);
+    if (!da.inC || !db.inC) r.warn.push('Une des deux dates est en dehors de ton contrat.');
+    if (!(da.planMin > 0) || da.hol) r.warn.push(cap(dLong(a)) + ' n’est pas un jour où tu travailles normalement.');
+    if (db.planMin > 0) r.warn.push(cap(dLong(b)) + ' est déjà un jour travaillé, pas un jour de repos.');
+    if (E.mondayOf(a) !== E.mondayOf(b)) r.warn.push('Les deux jours ne sont pas dans la même semaine : le jour de repos travaillé compterait en heures sup et l’autre en heures manquantes.');
+    r.min = da.planMin; r.n = 1;
+    r.rows.push(['Jour non travaillé', dY(a)]);
+    r.rows.push(['Horaires habituels ce jour-là', (segTxt(da.plan) || '—') + ' (' + hm(da.planMin) + ')']);
+    r.rows.push(['Jour travaillé à la place', dY(b)]);
+    r.rows.push(['Semaine', 'S' + E.isoWeek(a) + (E.isoWeek(a) !== E.isoWeek(b) ? ' et S' + E.isoWeek(b) : '')]);
+    r.rows.push(['Effet sur la paie', E.mondayOf(a) === E.mondayOf(b) ? 'aucun : ' + hm(da.planMin) + ' déplacées' : 'à vérifier (semaines différentes)']);
+    return r;
+  }
+  const partial = q.type !== 'cp' && q.partial;
+  const a = q.from, b = partial ? q.from : q.to;
+  if (!a || !b || b < a) { r.warn.push('Vérifie les dates : la fin doit être le même jour ou après le début.'); r.ok = false; return r; }
+  if (a < deb || b > fin) r.warn.push('Une partie de la période est hors de ton contrat (' + dShort(deb) + ' → ' + dShort(fin) + ').');
+  for (let k = a; k <= b && r.sched.length < 250; k = E.addDays(k, 1)) if (isWorkday(k)) r.sched.push(k);
+  const already = r.sched.filter(k => ['cp', 'recup', 'evt'].includes(dayOf(k).type) && !(q.applied && q.prev && k in q.prev));
+  if (already.length) r.warn.push(already.length + ' jour' + (already.length > 1 ? 's' : '') + ' de cette période ' + (already.length > 1 ? 'sont' : 'est') + ' déjà posé' + (already.length > 1 ? 's' : '') + ' en congé ou récup.');
+  if (partial) {
+    r.min = segsWindow(daySegs(a), q.hStart, q.hEnd);
+    if (!isWorkday(a)) r.warn.push('Tu ne travailles pas ce jour-là.');
+    else if (!r.min) r.warn.push('Ces heures ne tombent pas pendant ton horaire de travail.');
+    r.rows.push(['Date', dY(a)]);
+    r.rows.push(['Horaire d’absence', fmtT(q.hStart) + ' → ' + fmtT(q.hEnd)]);
+    r.rows.push(['Durée sur le temps de travail', hm(r.min)]);
+  } else {
+    r.min = r.sched.reduce((t, k) => t + dayOf(k).planMin, 0);
+    if (!r.sched.length) { r.warn.push('Aucun jour travaillé dans cette période (repos ou jours fériés).'); }
+    const last = prevWorkday(r.sched[0] || a), back = nextWorkday(r.sched[r.sched.length - 1] || b);
+    r.last = last; r.back = back;
+    r.rows.push(['Dernier jour travaillé', last ? dY(last) + ' au soir' : '—']);
+    r.rows.push(['Premier jour d’absence', dY(r.sched[0] || a)]);
+    r.rows.push(['Reprise du travail', back ? dY(back) + ' à ' + fmtT(dayOf(back).plan[0][0]) : 'après la fin du contrat']);
+  }
+  if (q.type === 'cp') {
+    const base = clone(S);
+    if (q.applied && q.prev) Object.entries(q.prev).forEach(([k, v]) => { if (v) base.days[k] = v; else delete base.days[k]; });
+    const t = today(), R0 = E.compute(base, { today: t });
+    const S2 = clone(base); r.sched.forEach(k => { S2.days[k] = { type: 'cp', ticket: 'auto', note: '' }; });
+    const R2 = E.compute(S2, { today: t });
+    r.n = R2.cp.pris.length - R0.cp.pris.length;
+    const lim = E.addDays(b, 3);
+    const mon = R2.cp.pris.filter(p => p.auto && p.k >= a && p.k <= lim).length - R0.cp.pris.filter(p => p.auto && p.k >= a && p.k <= lim).length;
+    const veille = E.addDays(a, -1), Rd = E.compute(base, { today: veille > t ? veille : t });
+    const prisAvant = R0.cp.pris.filter(p => p.k < a).length;
+    r.soldeAuj = R0.cp.solde; r.soldeDep = Rd.cp.report + Rd.cp.acquis - prisAvant; r.soldeApres = r.soldeDep - r.n; r.unite = R0.cp.unite;
+    r.rows.push(['Jours de congés décomptés', r.n + ' jour' + (r.n > 1 ? 's' : '') + ' ' + R0.cp.unite + (mon > 0 ? ' (dont ' + mon + ' lundi' + (mon > 1 ? 's' : '') + ')' : '')]);
+    r.rows.push(['Congés disponibles aujourd’hui', nd(r.soldeAuj) + ' j']);
+    r.rows.push(['Congés disponibles au départ', nd(r.soldeDep) + ' j']);
+    r.rows.push(['Congés restants après', nd(r.soldeApres) + ' j']);
+    if (r.soldeApres < -0.004) r.warn.push('Solde insuffisant : il te manquera ' + nd(-r.soldeApres) + ' j au départ (congés par anticipation, à voir avec ton employeur).');
+  } else {
+    if (!partial) { r.n = r.sched.length; r.rows.push(['Durée', r.sched.length + ' jour' + (r.sched.length > 1 ? 's' : '') + ' de travail · ' + hm(r.min)]); }
+    if (q.type === 'recup') {
+      const t = today();
+      const hsDone = R.weeks.filter(w => w.monday <= t).reduce((x, w) => x + w.min25 + w.min50, 0);
+      const recupDone = Object.keys(S.days).reduce((x, k) => { const e = S.days[k]; if (q.applied && q.prev && k in q.prev) return x; return x + (e.type === 'recup' ? dayOf(k).planMin : 0) + (+e.recupMin || 0); }, 0);
+      r.rows.push(['Heures sup faites depuis le début', hm(hsDone), true]);
+      r.rows.push(['Récupérations déjà posées', hm(recupDone), true]);
+    }
+    if (q.type === 'autre') {
+      r.rows.push(['Motif', motifLabel(q)]);
+      r.rows.push(['Rémunération', q.paid ? 'absence payée' : 'non payée (' + hm(r.min) + ' retenues)']);
+    }
+  }
+  if (!r.min && q.type !== 'cp') r.ok = r.warn.length === 0;
+  return r;
+}
+function reqObject(q) {
+  const y = q.from.slice(0, 4);
+  if (q.type === 'echange') return `échange du ${dLong(q.from)} contre le ${dLong(q.to)} ${q.to.slice(0, 4)}`;
+  const lbl = { cp: 'Congés payés', recup: 'Récupération d’heures', autre: 'Absence' }[q.type];
+  if (q.type !== 'cp' && q.partial) return `${lbl} le ${dLong(q.from)} ${y}, de ${fmtT(q.hStart)} à ${fmtT(q.hEnd)}`;
+  if (q.from === q.to) return `${lbl} le ${dLong(q.from)} ${y}`;
+  return `${lbl} du ${dLong(q.from)} au ${dLong(q.to)} ${q.to.slice(0, 4)}`;
+}
+function reqLetter(q, c) {
+  const P = ['Madame, Monsieur,'];
+  const per = q.from === q.to ? `le ${dY(q.from).toLowerCase()}` : `du ${dLong(q.from)} au ${dLong(q.to)} ${q.to.slice(0, 4)} inclus`;
+  const reprise = c.back ? ` Mon dernier jour de travail sera le ${c.last ? dLong(c.last) : '—'} et je reprendrai mon poste le ${dLong(c.back)} à ${fmtT(dayOf(c.back).plan[0][0])}.` : '';
+  if (q.type === 'cp') P.push(`Je vous prie de bien vouloir m’accorder ${c.n} jour${c.n > 1 ? 's' : ''} ${c.unite || 'ouvrables'} de congés payés, ${per}.${reprise}`);
+  else if (q.type === 'recup') P.push(q.partial ? `Je vous prie de bien vouloir m’accorder une récupération de ${hm(c.min)} le ${dY(q.from).toLowerCase()}, de ${fmtT(q.hStart)} à ${fmtT(q.hEnd)}, en contrepartie des heures supplémentaires que j’ai effectuées.`
+    : `Je vous prie de bien vouloir m’accorder une récupération de ${hm(c.min)} (${c.n} jour${c.n > 1 ? 's' : ''} de travail), ${per}, en contrepartie des heures supplémentaires que j’ai effectuées.${reprise}`);
+  else if (q.type === 'echange') { const da = dayOf(q.from); P.push(`Je vous prie de bien vouloir accepter l’échange suivant : je ne travaillerai pas le ${dY(q.from).toLowerCase()} (journée prévue de ${segTxt(da.plan)}) et je travaillerai à la place le ${dY(q.to).toLowerCase()}, habituellement mon jour de repos, avec le même horaire.`); }
+  else {
+    const mot = motifLabel(q), fam = (MOTIFS.find(m => m[0] === q.motif) || [])[2];
+    P.push((q.partial ? `Je vous prie de bien vouloir m’autoriser à m’absenter le ${dY(q.from).toLowerCase()}, de ${fmtT(q.hStart)} à ${fmtT(q.hEnd)}` : `Je vous prie de bien vouloir m’autoriser à m’absenter ${per}`) + `, pour le motif suivant : ${mot.charAt(0).toLowerCase() + mot.slice(1)}.` + (q.partial ? '' : reprise));
+    if (fam) P.push('Il s’agit d’un congé pour événement familial prévu par le Code du travail ; je vous fournirai le justificatif correspondant.');
+  }
+  if (q.comment && q.comment.trim()) P.push(q.comment.trim());
+  P.push('Je vous remercie par avance de votre réponse et vous prie d’agréer, Madame, Monsieur, l’expression de mes salutations distinguées.');
+  return P;
+}
+function buildReqPdf(q) {
+  const st = S.settings, c = reqCalc(q), d = PDF.create().page(), W = d.W, M = 56;
+  const gold = [0.72, 0.53, 0.18], grey = [0.42, 0.42, 0.45], light = [0.988, 0.975, 0.95], line = [0.9, 0.86, 0.78];
+  const name = [st.prenom, (st.nom || '').toUpperCase()].filter(Boolean).join(' ') || 'Prénom NOM';
+  d.rect(0, 0, W, 7, { fill: gold });
+  let y = 52;
+  d.text(M, y, name, { bold: true, size: 12 }); y += 15;
+  d.text(M, y, st.poste || '', { size: 10, color: grey }); y += 13;
+  d.text(M, y, 'CDD du ' + dDate(st.contrat.debut) + ' au ' + dDate(st.contrat.fin), { size: 10, color: grey });
+  let ry = 108;
+  d.text(W - M, ry, 'À l’attention de', { size: 9, color: grey, align: 'right' }); ry += 15;
+  d.text(W - M, ry, st.destinataire || 'La Direction', { bold: true, size: 11, align: 'right' }); ry += 14;
+  d.text(W - M, ry, [st.societe, st.employeur].filter(Boolean).join(' – '), { size: 10, align: 'right' }); ry += 13;
+  d.text(W - M, ry, st.adresseEmployeur || '', { size: 10, align: 'right' }); ry += 24;
+  d.text(W - M, ry, 'Fait à ' + (st.ville || '') + ', le ' + dDate(today()), { size: 10, align: 'right', color: grey });
+  y = ry + 40;
+  d.text(M, y, REQ_TITLES[q.type].toUpperCase(), { bold: true, size: 15.5 });
+  d.rect(M, y + 8, 46, 2.2, { fill: gold });
+  y += 30;
+  y = d.para(M, y, 'Objet : ' + reqObject(q), { bold: true, size: 10.5, width: W - 2 * M, lead: 14.5 }) + 8;
+  reqLetter(q, c).forEach(p => { y = d.para(M, y, p, { size: 10.5, width: W - 2 * M, lead: 15 }) + 6; });
+  // récapitulatif
+  const rows = [['Nature de la demande', REQ_TYPES[q.type]], ...c.rows.filter(x => !x[2])]; // les infos perso (heures sup, récup) restent dans l'appli
+  const rh = 19, bh = 28 + rows.length * rh + 4;
+  y += 8;
+  if (y + bh > 800) { d.page(); y = 60; }
+  d.rect(M, y, W - 2 * M, bh, { fill: light, stroke: [0.88, 0.82, 0.7], lw: 0.7, r: 8 });
+  d.text(M + 16, y + 19, 'RÉCAPITULATIF', { bold: true, size: 8.5, color: gold });
+  rows.forEach((rw, i) => {
+    const yy = y + 28 + i * rh + 13;
+    if (i) d.line(M + 16, yy - 13.5, W - M - 16, yy - 13.5, { color: line });
+    d.text(M + 16, yy, rw[0], { size: 9.5, color: grey });
+    let sz = 10; const maxW = W - 2 * M - 32 - d.width(rw[0], false, 9.5) - 14;
+    while (sz > 7 && d.width(rw[1], true, sz) > maxW) sz -= 0.5;
+    d.text(W - M - 16, yy, rw[1], { size: sz, bold: true, align: 'right' });
+  });
+  y += bh + 22;
+  // signatures
+  const bw = (W - 2 * M - 16) / 2, sh = 104;
+  if (y + sh > 798) { d.page(); y = 60; }
+  [[M, 'LE SALARIÉ'], [M + bw + 16, 'RÉPONSE DE L’EMPLOYEUR']].forEach(([x, t], i) => {
+    d.rect(x, y, bw, sh, { stroke: [0.82, 0.82, 0.85], lw: 0.7, r: 8 });
+    d.text(x + 14, y + 19, t, { bold: true, size: 8.5, color: grey });
+    if (!i) { d.text(x + 14, y + 37, name, { size: 10, bold: true }); d.text(x + 14, y + 55, 'Date : ' + dNum(today()), { size: 9.5, color: grey }); d.text(x + 14, y + 73, 'Signature :', { size: 9.5, color: grey }); }
+    else { d.check(x + 14, y + 29, 10, false); d.text(x + 30, y + 38, 'Accordée', { size: 10 }); d.check(x + 100, y + 29, 10, false); d.text(x + 116, y + 38, 'Refusée', { size: 10 }); d.text(x + 14, y + 59, 'Date :', { size: 9.5, color: grey }); d.text(x + 14, y + 77, 'Signature :', { size: 9.5, color: grey }); }
+  });
+  d.line(M, 810, W - M, 810, { color: [0.9, 0.9, 0.92] });
+  d.text(M, 824, 'Demande établie le ' + dNum(today()) + ' · ' + REQ_TYPES[q.type] + ' · ' + reqPeriod(q).replace('⇄', '/').replace('→', '–'), { size: 7.5, color: grey });
+  d.text(W - M, 824, 'Centime', { size: 7.5, color: gold, align: 'right', bold: true });
+  return d.output(REQ_TITLES[q.type]);
+}
+async function sharePdf(bytes, name) {
+  const file = new File([bytes], name, { type: 'application/pdf' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return true; }
+  } catch (e) { if (e.name === 'AbortError') return true; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.target = '_blank';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  return true;
+}
+function applyReq(q) {
+  const c = reqCalc(q), prev = {};
+  const set = (k, v) => { if (!(k in prev)) prev[k] = S.days[k] ? clone(S.days[k]) : null; S.days[k] = v; };
+  const note = q.type === 'autre' ? motifLabel(q) : REQ_TYPES[q.type];
+  if (q.type === 'echange') {
+    const pa = dayOf(q.from).plan;
+    set(q.from, { type: 'repos', ticket: 'auto', note: 'Échange avec le ' + dShort(q.to) });
+    set(q.to, { type: 'travail', seg: clone(pa.length ? pa : DEFSEG), ticket: 'auto', note: 'Échange avec le ' + dShort(q.from) });
+  } else if (q.type !== 'cp' && q.partial) {
+    const k = q.from, segs = daySegs(k), m = segsWindow(segs, q.hStart, q.hEnd);
+    const e = { type: 'travail', seg: segsMinus(segs, q.hStart, q.hEnd), ticket: 'auto', note: note + ' ' + fmtT(q.hStart) + '–' + fmtT(q.hEnd) };
+    if (q.type === 'recup' || q.paid) e.recupMin = m; else e.absMin = m;
+    set(k, e);
+  } else {
+    const ty = q.type === 'cp' ? 'cp' : q.type === 'recup' ? 'recup' : q.paid ? 'evt' : 'absence';
+    c.sched.forEach(k => set(k, { type: ty, ticket: 'auto', note }));
+  }
+  q.applied = true; q.prev = prev;
+  return Object.keys(prev).length;
+}
+function unapplyReq(q) {
+  Object.entries(q.prev || {}).forEach(([k, v]) => { if (v) S.days[k] = v; else delete S.days[k]; });
+  q.applied = false; q.prev = null;
+}
+function upsertReq(q) { const i = S.requests.findIndex(x => x.id === q.id); if (i >= 0) S.requests[i] = q; else S.requests.push(q); }
+function openReq(q) { ui.sheet = { kind: 'req', draft: clone(q) }; openSheet(sheetReq()); refreshReqSum(); }
+const rSec = (lb, html) => `<div class="sec"><div class="lb">${lb}</div>${html}</div>`;
+const rDate = (f, l) => `<div class="fld" style="padding:8px 0"><label>${l}</label><input type="date" data-r="${f}" value="${esc(ui.sheet.draft[f] || '')}"></div>`;
+const rTime = (f, l) => `<div class="fld" style="padding:8px 0"><label>${l}</label><input type="time" data-r="${f}" value="${esc(ui.sheet.draft[f] || '')}" style="width:150px"></div>`;
+function sheetReq() {
+  const q = ui.sheet.draft, saved = S.requests.some(x => x.id === q.id), st = S.settings;
+  let h = `<div class="sh"><div><h2 style="text-transform:none">${saved ? REQ_TITLES[q.type] : 'Nouvelle demande'}</h2><div class="tiny">${saved ? 'Créée le ' + dDate(q.created) : 'Remplis les dates : Centime calcule le reste'}</div></div><button class="icbtn" data-a="closeSheet">${IC.x}</button></div>
+    <div class="seg types" style="grid-template-columns:repeat(2,1fr)">${Object.entries(REQ_TYPES).map(([k, l]) => `<button data-a="rType" data-v="${k}" class="${q.type === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  if (q.type === 'echange') h += rSec('Les deux jours', rDate('from', 'Je ne travaille pas le') + rDate('to', 'Je travaille à la place le'));
+  else {
+    if (q.type !== 'cp') h += `<div class="sec"><div class="seg">${[[0, 'Journée(s) entière(s)'], [1, 'Quelques heures']].map(o => `<button data-a="rPartial" data-v="${o[0]}" class="${(q.partial ? 1 : 0) === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div></div>`;
+    if (q.type !== 'cp' && q.partial) h += rSec('Quand', rDate('from', 'Le') + rTime('hStart', 'De') + rTime('hEnd', 'À'));
+    else h += rSec('Période', rDate('from', q.type === 'cp' ? 'Premier jour de congé' : 'Du') + rDate('to', q.type === 'cp' ? 'Dernier jour de congé' : 'Au (inclus)'));
+    if (q.type === 'autre') h += rSec('Motif', `<select class="inp" data-r="motif">${MOTIFS.map(m => `<option value="${m[0]}" ${q.motif === m[0] ? 'selected' : ''}>${m[1]}</option>`).join('')}</select>` +
+      (q.motif === 'autre' ? `<input class="inp" style="margin-top:8px" data-r="motifTxt" value="${esc(q.motifTxt)}" placeholder="Précise le motif">` : '') +
+      `<div class="fld" style="border:0;padding-bottom:0"><label>Absence payée<small>oui pour un événement familial prévu par la loi</small></label><label class="sw"><input type="checkbox" data-r="paid" ${q.paid ? 'checked' : ''}><span></span></label></div>`);
+  }
+  h += rSec('Message à ajouter (facultatif)', `<textarea class="inp" data-r="comment" rows="3" maxlength="400" placeholder="Ex. : je reste joignable si besoin.">${esc(q.comment)}</textarea>`);
+  if (!st.nom) h += rSec('Ton nom (écrit sur le PDF)', `<input class="inp" data-sset="nom" placeholder="Nom de famille" value="">`);
+  h += `<div class="sec"><div class="lb">Récapitulatif</div><div class="card reqsum" id="reqSum"></div></div>
+    <div class="btns" style="margin-top:14px"><button class="btn pri" data-a="rPdf">${IC.doc} Créer le PDF à imprimer</button></div>
+    <div class="btns" style="margin-top:8px"><button class="btn" data-a="rSave">Enregistrer</button>${saved ? '<button class="btn dang" data-a="rDel">Supprimer</button>' : ''}</div>`;
+  if (saved) h += rSec('Suivi de la demande', `<div class="seg">${Object.entries(REQ_STATUS).map(([k, v]) => `<button data-a="rStatus" data-v="${k}" class="${q.status === k ? 'on' : ''}">${v[0]}</button>`).join('')}</div>
+    <p class="tiny" style="margin-top:8px">Quand elle est acceptée, Centime la pose dans ton calendrier et recalcule ta paie et tes congés.</p>
+    <div class="btns" style="margin-top:10px">${q.applied ? '<button class="btn" data-a="rUnapply">Retirer de mon calendrier</button>' : '<button class="btn" data-a="rApply">Poser dans mon calendrier</button>'}</div>`);
+  return h;
+}
+function refreshReqSum() {
+  const el = document.getElementById('reqSum'); if (!el || !ui.sheet || ui.sheet.kind !== 'req') return;
+  const c = reqCalc(ui.sheet.draft);
+  el.innerHTML = `<div class="rows">${c.rows.map(r => `<div class="row"><span class="l">${esc(r[0])}</span><span class="v" style="white-space:normal;max-width:58%">${esc(r[1])}</span></div>`).join('')}</div>` +
+    (c.warn.length ? `<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">${c.warn.map(w => `<div class="badge o" style="white-space:normal;line-height:1.35;padding:7px 10px;border-radius:10px">${esc(w)}</div>`).join('')}</div>` : '') +
+    (ui.sheet.draft.type === 'cp' && c.ok && c.rows.length ? `<div class="reqbig"><div><span class="tiny">Décomptés</span><b>${c.n} j</b></div><div><span class="tiny">Reste après</span><b class="${c.soldeApres < 0 ? 'neg' : 'gold'}">${nd(c.soldeApres)} j</b></div><div><span class="tiny">Reprise</span><b>${c.back ? dShort(c.back).replace(/^\S+ /, '') : '—'}</b></div></div>` : '');
+}
+
 /* ---------- actions ---------- */
 const A = {
   tab(el) { ui.tab = el.dataset.t; ui.anim = true; render(); window.scrollTo(0, 0); },
   goHours() { ui.tab = 'hours'; ui.anim = true; const t = today(); ui.calYm = firstUnconfirmedYm() || E.ymOf(t); render(); window.scrollTo(0, 0); },
   day(el) { openDay(el.dataset.k); },
   closeSheet() { closeSheet(); },
+  rNew() { openReq(newReq('cp')); },
+  rOpen(el) { const q = S.requests.find(x => x.id === el.dataset.id); if (q) openReq(q); },
+  rType(el) { const q = ui.sheet.draft; q.type = el.dataset.v; if (q.type === 'echange') setEchangeDefaults(q); else if (q.to < q.from) q.to = q.from; refreshSheetReq(); },
+  rPartial(el) { ui.sheet.draft.partial = el.dataset.v === '1'; refreshSheetReq(); },
+  rSave() { const q = ui.sheet.draft; const c = reqCalc(q); if (!c.ok) { toast(c.warn[0] || 'Vérifie la demande'); return; } upsertReq(clone(q)); save(); recompute(); render(); refreshSheetReq(); toast('Demande enregistrée'); },
+  rPdf() {
+    const q = ui.sheet.draft, c = reqCalc(q);
+    if (!c.ok) { toast(c.warn[0] || 'Vérifie la demande'); return; }
+    upsertReq(clone(q)); save(); recompute();
+    const bytes = buildReqPdf(q);
+    const name = (REQ_TYPES[q.type] + ' ' + q.from).replace(/[^\wÀ-ÿ -]/g, '').replace(/\s+/g, '-') + '.pdf';
+    sharePdf(bytes, name);
+    render(); refreshSheetReq();
+  },
+  rDel() { const q = ui.sheet.draft; if (!confirm('Supprimer cette demande ?' + (q.applied ? ' Elle sera aussi retirée de ton calendrier.' : ''))) return; const st = S.requests.find(x => x.id === q.id); if (st && st.applied) unapplyReq(st); S.requests = S.requests.filter(x => x.id !== q.id); closeSheet(); commit('Demande supprimée'); },
+  rStatus(el) {
+    const q = ui.sheet.draft, v = el.dataset.v; q.status = v; let msg = 'Statut : ' + REQ_STATUS[v][0];
+    if (v === 'acceptee' && !q.applied) { const n = applyReq(q); msg = 'Acceptée : ' + n + ' jour' + (n > 1 ? 's' : '') + ' posé' + (n > 1 ? 's' : '') + ' dans ton calendrier'; }
+    if (v === 'refusee' && q.applied) { unapplyReq(q); msg = 'Refusée : retirée de ton calendrier'; }
+    upsertReq(clone(q)); commit(msg); refreshSheetReq();
+  },
+  rApply() { const q = ui.sheet.draft; const c = reqCalc(q); if (!c.ok) { toast(c.warn[0]); return; } const n = applyReq(q); upsertReq(clone(q)); commit(n + ' jour' + (n > 1 ? 's' : '') + ' posé' + (n > 1 ? 's' : '') + ' dans ton calendrier'); refreshSheetReq(); },
+  rUnapply() { const q = ui.sheet.draft; unapplyReq(q); upsertReq(clone(q)); commit('Retirée de ton calendrier'); refreshSheetReq(); },
   confirmDay(el) { const k = el.dataset.k, di = dayOf(k); S.days[k] = { type: 'travail', seg: clone(di.plan), ticket: 'auto', note: '' }; commit('Journée confirmée ✓'); },
   confirmMonth(el) {
     const ym = el.dataset.ym, t = today(); let n = 0;
@@ -1318,7 +1755,7 @@ const A = {
     const { k, draft } = ui.sheet;
     const n = document.getElementById('dNote'); if (n) draft.note = n.value;
     const e = { type: draft.type, ticket: draft.ticket || 'auto', note: draft.note || '' };
-    if (draft.type === 'travail') e.seg = draft.seg.filter(s => s[0] && s[1]);
+    if (draft.type === 'travail') { e.seg = draft.seg.filter(s => s[0] && s[1]); if (draft.recupMin) e.recupMin = draft.recupMin; if (draft.absMin) e.absMin = draft.absMin; }
     S.days[k] = e; closeSheet(); commit('Enregistré ✓');
   },
   dReset() { delete S.days[ui.sheet.k]; closeSheet(); commit('Horaire prévu rétabli'); },
@@ -1344,7 +1781,7 @@ const A = {
   ghLoad() { ghLoad(); },
   exportFile() { exportFile(); },
   importFile() { document.getElementById('importInput').click(); },
-  resetDays() { if (confirm('Effacer toutes tes saisies (heures, congés, primes) ? Les réglages sont conservés.')) { S.days = {}; S.months = {}; S.clock = null; commit('Saisies effacées'); } },
+  resetDays() { if (confirm('Effacer toutes tes saisies (heures, congés, primes, demandes) ? Les réglages sont conservés.')) { S.days = {}; S.months = {}; S.requests = []; S.clock = null; commit('Saisies effacées'); } },
   resetAll() { if (confirm('Tout réinitialiser, réglages compris ?')) { const g = S.settings.github; S = E.newState(); S.settings.github = g; S.onboarded = true; commit('Réinitialisé'); } },
   welcomeGo() { const n = document.getElementById('wName'); S.settings.prenom = n ? n.value.trim() : ''; S.onboarded = true; closeSheet(); commit(); },
 };
@@ -1438,6 +1875,14 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
+  if (el.dataset.r && ui.sheet && ui.sheet.kind === 'req') {
+    const q = ui.sheet.draft, f = el.dataset.r;
+    q[f] = el.type === 'checkbox' ? el.checked : el.value;
+    if (f === 'from' && q.type !== 'echange' && (!q.to || q.to < q.from)) { q.to = q.from; const t = document.querySelector('[data-r="to"]'); if (t) t.value = q.to; }
+    if (f === 'motif') { q.paid = !!(MOTIFS.find(m => m[0] === q.motif) || [])[2]; refreshSheetReq(); return; }
+    refreshReqSum(); return;
+  }
+  if (el.dataset.sset) { S.settings[el.dataset.sset] = el.value.trim(); save(); return; }
   if (el.dataset.set) {
     const p = el.dataset.set, ty = el.dataset.type, old = gp(S.settings, p);
     const v = ty === 'num' ? parseNum(el.value) : ty === 'bool' ? el.checked : el.value;
@@ -1462,6 +1907,7 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('input', e => {
   const el = e.target;
+  if (el.dataset.r && ui.sheet && ui.sheet.kind === 'req' && (el.tagName === 'TEXTAREA' || el.type === 'text')) { ui.sheet.draft[el.dataset.r] = el.value; return; }
   if (el.dataset.slot != null && ui.sheet && ui.sheet.kind === 'day') { ui.sheet.draft.seg[+el.dataset.slot][+el.dataset.p] = el.value; refreshDayTotals(); }
   else if (el.id === 'dNote' && ui.sheet && ui.sheet.draft) ui.sheet.draft.note = el.value;
 });
