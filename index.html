@@ -279,6 +279,24 @@ select.inp{-webkit-appearance:none;appearance:none}
 .lk-forgot{color:rgba(245,245,247,.5);font-size:14px;margin-top:6px}
 [data-oled][data-theme=dark]{--bg:#000;--bg2:#0a0a0a;--card:rgba(255,255,255,.045);--card2:rgba(255,255,255,.075);--glass:rgba(0,0,0,.78)}
 [data-oled][data-theme=dark] body::before{opacity:.45}
+.paybanner{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;padding:14px;margin-bottom:12px;border-radius:18px;border:1px solid var(--gold);background:linear-gradient(120deg,var(--goldbg),rgba(255,255,255,.03));animation:pulse 2.2s ease-in-out infinite}
+.paybanner .pe{font-size:30px}.paybanner .go{margin-left:auto;font-weight:800;color:var(--gold);white-space:nowrap}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(230,189,106,.0)}50%{box-shadow:0 0 0 6px rgba(230,189,106,.18)}}
+.slot{position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s}
+.slot.on{opacity:1}
+.sl-box{width:100%;max-width:380px;border-radius:28px;padding:22px 16px 18px;background:linear-gradient(180deg,#3a2a0e,#1b1307 60%,#120d05);border:2px solid #e6bd6a;box-shadow:0 0 0 6px rgba(230,189,106,.15),0 30px 80px rgba(0,0,0,.6),inset 0 2px 0 rgba(255,255,255,.15);text-align:center;color:#fff}
+.sl-top{font-weight:900;letter-spacing:.14em;font-size:14px;color:#f6d68c;margin-bottom:14px}
+.sl-reels{display:flex;justify-content:center;align-items:center;gap:4px;background:#0b0905;border-radius:16px;padding:12px 8px;box-shadow:inset 0 4px 14px rgba(0,0,0,.8),inset 0 0 0 1px rgba(230,189,106,.35)}
+.reel{display:block;flex:0 0 34px;height:56px;width:34px;overflow:hidden;border-radius:8px;background:linear-gradient(180deg,#d9d2c3,#fffaf0 30%,#fffaf0 70%,#d9d2c3);box-shadow:inset 0 6px 8px rgba(0,0,0,.35),inset 0 -6px 8px rgba(0,0,0,.35)}
+.strip{display:flex;flex-direction:column}.strip i{display:block;height:56px;line-height:56px;font-style:normal;font-size:38px;font-weight:900;color:#1a1306;font-variant-numeric:tabular-nums}
+.sep{font-size:34px;font-weight:900;color:#f6d68c;min-width:8px;flex:0 0 auto}.sep.eur{margin-left:6px}
+.sl-lights{display:flex;justify-content:space-between;margin:14px 6px 4px}.sl-lights i{width:9px;height:9px;border-radius:50%;background:#6b5420}
+.slot .sl-lights i{animation:blink .5s infinite alternate}.slot .sl-lights i:nth-child(2n){animation-delay:.25s}
+@keyframes blink{to{background:#ffe7a3;box-shadow:0 0 10px #ffd36b}}
+.slot.win .sl-box{animation:winpulse .6s ease 3}
+@keyframes winpulse{50%{transform:scale(1.04);box-shadow:0 0 0 10px rgba(230,189,106,.35),0 30px 80px rgba(0,0,0,.6)}}
+.sl-verdict{min-height:64px;display:flex;flex-direction:column;gap:4px;margin-top:10px}.sl-verdict b{font-size:24px;font-weight:900;color:#f6d68c}.sl-verdict span{font-size:14px;color:rgba(255,255,255,.75);line-height:1.4}
+.sl-ok{margin-top:12px;width:100%;transition:opacity .3s}
 /* ===== écran de chargement ===== */
 #splash{position:fixed;inset:0;z-index:100;background:#08080a;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#f5f5f7;
   transition:opacity .55s ease,transform .55s cubic-bezier(.2,.8,.2,1),filter .55s ease}
@@ -445,6 +463,7 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     brutSaisonnier: 5476.33,
     saisonDebut: '2026-07-10',
     paie: { jour: 0 },
+    revolut: { libelle: 'CERDAGNE, COSY' },
     look: { accent: 'or', oled: false },
     fx: { sons: true, confettis: true },
     meteo: { actif: true, ville: 'Saillagouse' },
@@ -862,7 +881,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.5';
+const VERSION = '1.6';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -1011,6 +1030,7 @@ function vHome() {
     <div class="sub"><span>Brut <b class="num">${eur(P.brut)}</b></span><span>Heures sup <b class="num">${hm(M.min25 + M.min50)}</b></span><span>Tickets <b>${M.tickets}</b></span></div>
     <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">${verifBadge()}${M.unconfirmed ? `<span class="badge o">${M.unconfirmed} j à confirmer</span>` : ''}</div>
   </div>`;
+  h += payBanner();
   h += countdowns(t);
   const totUnc = Object.values(R.months).reduce((a, m) => a + m.unconfirmed, 0);
   if (totUnc) h += `<button class="alert" data-a="goHours"><div><b>${totUnc} journée${totUnc > 1 ? 's' : ''} passée${totUnc > 1 ? 's' : ''}</b> encore « prévue${totUnc > 1 ? 's' : ''} » : confirme ou corrige tes vraies heures.</div><span class="go">Voir ›</span></button>`;
@@ -1304,6 +1324,8 @@ function vSettings(embedded) {
     ${fSw('look.oled', 'Mode nuit de livraison', 'noir pur, idéal la nuit et pour la batterie')}
     ${fSw('fx.sons', 'Son « cha-ching »', 'quand tu gagnes des heures sup ou un succès')}${fSw('fx.confettis', 'Confettis')}
     ${fNum('paie.jour', 'Jour de paie', '0 = dernier jour du mois (le 30/09 sur ton bulletin)')}</div>`;
+  h += `<div class="card"><h3>Revolut 💸<span class="r">salaire détecté</span></h3>${fTxt('revolut.libelle', 'Libellé de ton salaire', 'mots cherchés dans tes virements reçus, séparés par des virgules', 'CERDAGNE, COSY')}
+    <div class="btns" style="margin-top:8px"><button class="btn" data-a="payOpen" data-ym="${contractYm(E.ymOf(today()))}">🎰 Ma paie est tombée</button></div></div>`;
   h += `<div class="card"><h3>Météo<span class="r"><button class="btn sm ghost" data-a="wxRefresh">Actualiser</button></span></h3>${fSw('meteo.actif', 'Afficher la météo sur l’accueil', 'neige, verglas et vent en Cerdagne')}${fSel('meteo.ville', 'Ville', '', Object.keys(TOWNS).map(t => [t, t]))}</div>`;
   h += `<div class="card"><h3>Objectif d’épargne 🐷</h3>${fSw('epargne.actif', 'Activer', 'une barre qui se remplit avec tes heures sup')}${st.epargne.actif ? fTxt('epargne.nom', 'Pour quoi ?', '', 'Ex. nouveau téléphone') + fNum('epargne.objectif', 'Objectif', '€') + fNum('epargne.part', 'Part des heures sup mise de côté', '% du net des heures sup') + fNum('epargne.deja', 'Déjà de côté', '€') : ''}</div>`;
   h += `<div class="card"><h3>Sécurité<span class="r">${st.lock.mode === 'off' || !st.lock.pinHash ? 'désactivé' : st.lock.mode === 'faceid' ? 'Face ID + code' : 'code'}</span></h3>
@@ -2674,6 +2696,220 @@ document.addEventListener('change', e => {
   else if (el.dataset.reel) { const [ym, f] = el.dataset.reel.split('.'), mo = S.months[ym] || (S.months[ym] = {}); mo.reel = mo.reel || {}; if (mo.netReel != null && mo.reel.net == null) mo.reel.net = mo.netReel; delete mo.netReel; mo.reel[f] = el.value.trim() === '' ? null : parseNum(el.value); commit(); }
 });
 document.addEventListener('input', e => { const el = e.target; if (el.dataset.sim != null && el.dataset.sim !== 'ym' && ui.sheet && ui.sheet.kind === 'sim') { ui.sheet.sim[el.dataset.sim] = parseNum(el.value); refreshSim(); } });
+
+/* ============================================================
+   MA PAIE EST TOMBÉE : Revolut (notification ou relevé) + machine à sous
+   ============================================================ */
+// « 1 455,51 € », « €1,455.51 », « +1455.51 EUR » → 1455.51
+function parseAmount(txt) {
+  const re = /([+−-]?)\s*(?:€\s*)?(\d{1,3}(?:[   .,]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)\s*(€|eur)?/gi;
+  const found = [];
+  let m;
+  while ((m = re.exec(String(txt || '')))) {
+    let s = m[2].replace(/[   ]/g, '');
+    const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+    if (lc >= 0 && ld >= 0) s = lc > ld ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    else if (lc >= 0) s = s.length - lc - 1 === 3 && !/[.,]\d{1,2}$/.test(m[2]) ? s.replace(/,/g, '') : s.replace(',', '.');
+    else if (ld >= 0 && s.length - ld - 1 === 3) s = s.replace(/\./g, '');
+    const v = parseFloat(s); if (!isNaN(v)) found.push({ v: (m[1] && m[1] !== '+' ? -1 : 1) * v, euro: !!m[3] || /€/.test(m[0]) });
+  }
+  const plaus = found.filter(f => f.v >= 300 && f.v <= 10000);
+  return (plaus.find(f => f.euro) || plaus[0] || found.find(f => f.euro) || found[0] || {}).v ?? null;
+}
+const salaryMonth = k => +k.slice(8) >= 15 ? E.ymOf(k) : E.addMonths(E.ymOf(k), -1);
+function paydayPending() {
+  const t = today();
+  for (const off of [0, -1]) {
+    const ym = E.addMonths(E.ymOf(t), off);
+    if (!R.months[ym]) continue;
+    const pd = payDate(ym), mo = S.months[ym] || {};
+    if (t >= E.addDays(pd, -1) && E.dayDiff(pd, t) <= 10 && !(mo.reel && mo.reel.net != null)) return ym;
+  }
+  return null;
+}
+function payBanner() {
+  const ym = paydayPending(); if (!ym) return '';
+  return `<button class="paybanner" data-a="payOpen" data-ym="${ym}"><span class="pe">🎰</span><span><b>Ta paie ${/^[aeiouy]/.test(ymMonth(ym)) ? 'd’' : 'de '}${ymMonth(ym)} est tombée ?</b><br><span class="tiny">Colle la notif Revolut et lance la machine à sous</span></span><span class="go">Révéler ›</span></button>`;
+}
+
+/* ----- lecture d'un relevé Revolut : CSV ou Excel (.xlsx) ----- */
+function parseCSV(text) {
+  const first = text.split(/\r?\n/)[0] || '', delim = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',';
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === delim) { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim()));
+}
+async function unzipReader(buf) {
+  const dv = new DataView(buf); let eocd = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('fichier illisible');
+  const files = {}; let p = dv.getUint32(eocd + 16, true);
+  for (let i = 0, n = dv.getUint16(eocd + 10, true); i < n; i++) {
+    const nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    files[new TextDecoder().decode(new Uint8Array(buf, p + 46, nlen))] = { method: dv.getUint16(p + 10, true), csize: dv.getUint32(p + 20, true), lho: dv.getUint32(p + 42, true) };
+    p += 46 + nlen + elen + clen;
+  }
+  return async name => {
+    const f = files[name]; if (!f) return null;
+    const data = new Uint8Array(buf, f.lho + 30 + dv.getUint16(f.lho + 26, true) + dv.getUint16(f.lho + 28, true), f.csize);
+    if (f.method === 0) return new TextDecoder().decode(data);
+    const out = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return new TextDecoder().decode(out);
+  };
+}
+async function xlsxRows(buf) {
+  const get = await unzipReader(buf), P = new DOMParser();
+  const ss = await get('xl/sharedStrings.xml');
+  const strings = ss ? [...P.parseFromString(ss, 'application/xml').getElementsByTagName('si')].map(si => si.textContent) : [];
+  const sheet = await get('xl/worksheets/sheet1.xml'); if (!sheet) throw new Error('feuille introuvable');
+  const colIdx = ref => { let n = 0; for (const ch of ref.replace(/\d+/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  return [...P.parseFromString(sheet, 'application/xml').getElementsByTagName('row')].map(r => {
+    const out = [];
+    [...r.getElementsByTagName('c')].forEach(c => {
+      const v = c.getElementsByTagName('v')[0], isx = c.getElementsByTagName('t')[0];
+      let val = v ? v.textContent : isx ? isx.textContent : '';
+      if (c.getAttribute('t') === 's') val = strings[+val];
+      out[colIdx(c.getAttribute('r'))] = val;
+    });
+    return out;
+  });
+}
+function toDateKey(v) {
+  const s = String(v || '').trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return `${m[1]}-${m[2]}-${m[3]}`;
+  if ((m = s.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{4})/))) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  if (/^\d{5}(\.\d+)?$/.test(s)) { const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(+s) * 864e5); return E.toKey(d); }
+  return null;
+}
+function findSalaries(rows) {
+  const head = (rows[0] || []).map(h => String(h || '').toLowerCase());
+  const find = (re, not) => head.findIndex(h => re.test(h) && !(not && not.test(h)));
+  let iDate = find(/completed|termin|date de fin|fin/); if (iDate < 0) iDate = find(/date|started|début/);
+  const iDesc = find(/descr|libell|détail|reference|référence/), iAmt = find(/amount|montant/, /fee|frais/), iState = find(/state|état|statut/);
+  if (iDate < 0 || iDesc < 0 || iAmt < 0) throw new Error('colonnes Date / Description / Montant introuvables');
+  const kws = String(S.settings.revolut.libelle || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+  const out = [];
+  rows.slice(1).forEach(r => {
+    const desc = String(r[iDesc] || ''), amt = typeof r[iAmt] === 'number' ? r[iAmt] : parseFloat(String(r[iAmt] || '').replace(/[   ]/g, '').replace(',', '.'));
+    const k = toDateKey(r[iDate]), st = iState >= 0 ? String(r[iState] || '').toLowerCase() : '';
+    if (!k || !(amt > 0) || /revert|annul|declin|refus|fail/.test(st)) return;
+    if (kws.length ? kws.some(w => desc.toLowerCase().includes(w)) : /salaire|paie|payroll|salary/i.test(desc)) out.push({ k, ym: salaryMonth(k), net: Math.round(amt * 100) / 100, desc });
+  });
+  return out.sort((a, b) => a.k < b.k ? -1 : 1);
+}
+
+/* ----- feuille « Ma paie est tombée » ----- */
+function openPay(ym) {
+  ui.sheet = { kind: 'paie', ym, amt: null, found: null, err: '' };
+  openSheet(sheetPay());
+}
+function sheetPay() {
+  const s = ui.sheet, est = R.months[s.ym] ? R.months[s.ym].pay.net : null;
+  const lst = s.found ? `<div class="rows" style="margin-top:8px">${s.found.length ? s.found.map(f => {
+    const M = R.months[f.ym], ref = M ? M.pay.net : f.ym === '2026-09' ? 1647.73 : null, d = ref != null ? r2(f.net - ref) : null;
+    return `<div class="row"><span class="l"><b>${ymLabel(f.ym)}</b><br><span class="tiny">reçu le ${dShort(f.k)}${M ? '' : ' · contrat saisonnier'}</span></span><span class="v num">${eur(f.net)}${d != null ? `<br><span class="tiny ${Math.abs(d) < 0.005 ? 'pos' : 'neg'}">${Math.abs(d) < 0.005 ? '✓ au centime' : (d > 0 ? '+' : '') + eur(d)}</span>` : ''}</span></div>`;
+  }).join('') : '<div class="empty">Aucun salaire trouvé avec le libellé « ' + esc(S.settings.revolut.libelle) + ' ». Change-le dans Réglages → Revolut.</div>'}</div>` : '';
+  return `<div class="sh"><div><h2 style="text-transform:none">Ma paie est tombée 💸</h2><div class="tiny">${ymLabel(s.ym)}${est != null ? ' · estimation Centime ' + eur(est) : ''}</div></div><button class="icbtn" data-a="closeSheet">${IC.x}</button></div>
+    <div class="sec"><div class="lb">1 · Colle la notification Revolut</div>
+      <textarea class="inp" id="payTxt" rows="3" placeholder="Ex. : Vous avez reçu 1 455,51 € de SAS CERDAGNE MEUBLES SAS"></textarea>
+      <div class="btns" style="margin-top:8px"><button class="btn sm" style="flex:1" data-a="payPaste">📋 Coller depuis le presse-papiers</button></div></div>
+    <div class="sec"><div class="lb">2 · Ou tape le montant reçu</div><div class="fld" style="padding-top:0;border:0"><label>Net reçu sur Revolut</label><input type="text" inputmode="decimal" id="payAmt" placeholder="0,00" value="${s.amt != null ? numIn(s.amt) : ''}"></div></div>
+    ${s.err ? `<p class="tiny neg" style="font-weight:700">${esc(s.err)}</p>` : ''}
+    <div class="btns" style="margin-top:6px"><button class="btn pri" data-a="paySpin">🎰 Lancer la machine à sous</button></div>
+    <div class="sec"><div class="lb">3 · Ou importe un relevé Revolut</div>
+      <p class="tiny">Dans Revolut : ton compte en euros → « … » → Relevé → format <b>Excel</b> ou <b>CSV</b> → Enregistrer dans Fichiers. Centime retrouve tous tes salaires d’un coup.</p>
+      <input type="file" id="revFile" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
+      <div class="btns" style="margin-top:8px"><button class="btn" data-a="revImport">📄 Choisir le relevé</button></div>${lst}
+      ${s.found && s.found.length ? `<div class="btns" style="margin-top:10px"><button class="btn pri" data-a="revSave">Enregistrer ${s.found.length} salaire${s.found.length > 1 ? 's' : ''} et lancer la machine</button></div>` : ''}</div>`;
+}
+function refreshPay() { const sh = document.getElementById('sheet'), y = sh.scrollTop; sh.innerHTML = '<div class="grab"></div>' + sheetPay(); sh.scrollTop = y; }
+function saveSalary(ym, net, k) {
+  const mo = S.months[ym] || (S.months[ym] = {});
+  mo.reel = Object.assign(mo.reel || {}, { net });
+  if (mo.netReel != null) delete mo.netReel;
+  mo.recu = k || today();
+}
+
+/* ----- machine à sous ----- */
+function slotMachine(ym, net) {
+  closeSheet();
+  const M = R.months[ym], est = M ? M.pay.net : null, d = est != null ? r2(net - est) : null, exact = d != null && Math.abs(d) < 0.005;
+  const txt = n2(net), chars = [...txt];
+  const el = document.createElement('div'); el.className = 'slot'; el.id = 'slot';
+  let di = 0;
+  el.innerHTML = `<div class="sl-box"><div class="sl-top">🎰 PAIE ${ymLabel(ym).toUpperCase()}</div>
+    <div class="sl-reels">${chars.map(ch => /\d/.test(ch) ? `<span class="reel"><span class="strip" data-d="${ch}" data-i="${di++}">${Array.from({ length: 31 }, (_, i) => `<i>${i % 10}</i>`).join('')}</span></span>` : `<span class="sep">${ch === ' ' || ch === ' ' ? '&nbsp;' : ch}</span>`).join('')}<span class="sep eur">€</span></div>
+    <div class="sl-lights">${'<i></i>'.repeat(14)}</div>
+    <div class="sl-verdict" id="slV"></div>
+    <button class="btn pri sl-ok" data-a="slotClose" style="opacity:0">Trop bien !</button></div>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('on'));
+  const strips = [...el.querySelectorAll('.strip')], h = el.querySelector('.reel').getBoundingClientRect().height || 56;
+  // tic-tic pendant que ça tourne
+  const a = (S.settings.fx || {}).sons ? audio() : null;
+  let ticks = 0; const tick = setInterval(() => { if (!a || ticks++ > 26) return; const o = a.createOscillator(), g = a.createGain(); o.type = 'square'; o.frequency.value = 1400 + Math.random() * 300; g.gain.setValueAtTime(0.03, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + 0.03); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.035); }, 70);
+  strips.forEach((s, i) => {
+    const target = 20 + +s.dataset.d, dur = 1.3 + i * 0.32;
+    s.style.transition = `transform ${dur}s cubic-bezier(.12,.75,.2,1.02)`;
+    requestAnimationFrame(() => requestAnimationFrame(() => { s.style.transform = `translateY(${-target * h}px)`; }));
+  });
+  const total = 1300 + (strips.length - 1) * 320 + 150;
+  setTimeout(() => {
+    clearInterval(tick);
+    el.classList.add(exact ? 'win' : 'done');
+    const v = document.getElementById('slV');
+    if (exact) { v.innerHTML = '<b>🎯 JACKPOT !</b><span>Identique à l’estimation Centime, au centime près.</span>'; celebrate(null, true); setTimeout(() => confetti(160), 700); }
+    else if (d != null) { v.innerHTML = `<b>${d > 0 ? '💰 +' : '🔍 '}${eur(d)}</b><span>${d > 0 ? 'de plus que' : 'de moins que'} l’estimation (${eur(est)}). Va voir « Comparer avec ton vrai bulletin » dans Paie pour trouver la ligne qui diffère.</span>`; chaChing(); confetti(70); }
+    else { v.innerHTML = '<b>💸 Paie reçue !</b>'; chaChing(); confetti(90); }
+    el.querySelector('.sl-ok').style.opacity = 1;
+  }, total);
+}
+
+/* ----- actions ----- */
+Object.assign(A, {
+  payOpen(el) { openPay(el.dataset.ym); },
+  async payPaste() {
+    try { const t = await navigator.clipboard.readText(); const ta = document.getElementById('payTxt'); ta.value = t; ta.dispatchEvent(new Event('input', { bubbles: true })); }
+    catch (e) { toast('Appuie longuement dans la case puis « Coller »'); }
+  },
+  paySpin() {
+    const s = ui.sheet, typed = parseNum((document.getElementById('payAmt') || {}).value || ''), fromTxt = parseAmount((document.getElementById('payTxt') || {}).value || '');
+    const net = typed || fromTxt;
+    if (!net || net < 50) { s.err = 'Je ne trouve pas de montant : colle la notification ou tape le net reçu.'; refreshPay(); return; }
+    saveSalary(s.ym, Math.round(net * 100) / 100); save(); recompute(); render();
+    slotMachine(s.ym, Math.round(net * 100) / 100);
+  },
+  revImport() { document.getElementById('revFile').click(); },
+  revSave() {
+    const f = ui.sheet.found || []; if (!f.length) return;
+    f.forEach(x => saveSalary(x.ym, x.net, x.k)); save(); recompute(); render();
+    const last = f.filter(x => R.months[x.ym]).pop() || f[f.length - 1];
+    slotMachine(last.ym, last.net);
+  },
+  slotClose() { const el = document.getElementById('slot'); if (el) { el.classList.remove('on'); setTimeout(() => el.remove(), 300); } checkBadges(true); render(); },
+});
+document.addEventListener('input', e => {
+  if (e.target.id !== 'payTxt' || !ui.sheet || ui.sheet.kind !== 'paie') return;
+  const v = parseAmount(e.target.value), inp = document.getElementById('payAmt');
+  if (v && inp) { inp.value = numIn(v.toFixed(2)); ui.sheet.amt = v; }
+});
+document.addEventListener('change', async e => {
+  const el = e.target; if (el.id !== 'revFile' || !el.files[0]) return;
+  const file = el.files[0];
+  try {
+    const rows = /\.xlsx$/i.test(file.name) || /sheet/.test(file.type) ? await xlsxRows(await file.arrayBuffer()) : parseCSV(await file.text());
+    ui.sheet.found = findSalaries(rows); ui.sheet.err = '';
+  } catch (x) { ui.sheet.found = null; ui.sheet.err = 'Relevé illisible (' + (x.message || x) + '). Essaie le format CSV, ou colle la notification.'; }
+  el.value = ''; refreshPay();
+});
 
 /* ---------- démarrage ---------- */
 recompute();
