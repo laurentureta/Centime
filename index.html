@@ -883,7 +883,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.7';
+const VERSION = '1.7.1';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -3072,9 +3072,9 @@ function bankCard() {
       <button class="btn" style="width:100%;margin-top:8px" data-a="bankCode">✓ Valider le code</button>`)}
     ${B.lastErr ? `<p class="tiny neg" style="margin-top:8px;font-weight:700">${esc(B.lastErr)}</p>` : ''}
     <details ${relay ? 'open' : ''}><summary>Étape bonus : passer par un relais</summary><div class="help">
-      <p>Seulement si l’étape 4 affiche « ton iPhone bloque l’accès direct ». Le relais est un mini-serveur gratuit chez Cloudflare qui garde ta clé et parle à Enable Banking à la place de l’iPhone.</p>
+      <p>Seulement si l’étape 4 affiche « ton iPhone bloque l’accès direct ». Le relais est un mini-serveur gratuit (Supabase ou Cloudflare) qui garde ta clé et parle à Enable Banking à la place de l’iPhone.</p>
       ${fSel('bank.mode', 'Passage', '', [['direct', 'Direct'], ['relais', 'Par mon relais']])}
-      ${relay ? fTxt('bank.relayUrl', 'Adresse du relais', '', 'https://centime-relais.xxx.workers.dev') + fTxt('bank.relayToken', 'Mot de passe du relais', '', 'RELAY_TOKEN', 'password') : ''}
+      ${relay ? fTxt('bank.relayUrl', 'Adresse du relais', '', 'https://xxxx.supabase.co/functions/v1/relais') + fTxt('bank.relayToken', 'Mot de passe du relais', '', 'RELAY_TOKEN', 'password') : ''}
       <div class="btns" style="margin-top:8px"><button class="btn sm" style="flex:1" data-a="copyRelay">📋 Copier le code du relais</button></div>
       ${B.privateKey ? '<div class="btns" style="margin-top:8px"><button class="btn sm" style="flex:1" data-a="copyKey">🔑 Copier ma clé pour PRIVATE_KEY</button></div>' : ''}</div></details></div>`;
 }
@@ -3082,7 +3082,12 @@ function bankCard() {
 Object.assign(A, {
   copyTxt(el) { navigator.clipboard.writeText(el.dataset.t).then(() => toast('Copié ✓'), () => toast('Appuie longuement sur l’adresse pour la copier')); },
   pemPick() { document.getElementById('pemFile').click(); },
-  copyKey() { if (!confirm('Copier ta clé privée ? Colle-la uniquement dans Cloudflare (secret PRIVATE_KEY), nulle part ailleurs.')) return; navigator.clipboard.writeText(bankCfg().privateKey).then(() => toast('Clé copiée : colle-la dans PRIVATE_KEY'), () => toast('Copie impossible')); },
+  copyKey() {
+    const k = bankCfg().privateKey;
+    const manual = () => prompt('Copie ta clé (touche le texte → Tout sélectionner → Copier), puis colle-la dans le secret PRIVATE_KEY :', k);
+    if (!navigator.clipboard) return manual();
+    navigator.clipboard.writeText(k).then(() => toast('🔑 Clé copiée (' + k.length + ' caractères) : colle-la dans PRIVATE_KEY'), manual);
+  },
   async bankAuth(el) {
     const B = bankCfg(); el.disabled = true; const old = el.textContent; el.textContent = 'Connexion à Enable Banking…';
     try { const url = await bankStart(); B.lastErr = ''; save(false); location.href = url; }
