@@ -297,6 +297,7 @@ select.inp{-webkit-appearance:none;appearance:none}
 @keyframes winpulse{50%{transform:scale(1.04);box-shadow:0 0 0 10px rgba(230,189,106,.35),0 30px 80px rgba(0,0,0,.6)}}
 .sl-verdict{min-height:64px;display:flex;flex-direction:column;gap:4px;margin-top:10px}.sl-verdict b{font-size:24px;font-weight:900;color:#f6d68c}.sl-verdict span{font-size:14px;color:rgba(255,255,255,.75);line-height:1.4}
 .sl-ok{margin-top:12px;width:100%;transition:opacity .3s}
+.copyrow{display:flex;gap:8px;align-items:center;margin-top:6px}.copyrow code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--card2);border-radius:8px;padding:8px;font-size:12.5px}
 /* ===== écran de chargement ===== */
 #splash{position:fixed;inset:0;z-index:100;background:#08080a;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#f5f5f7;
   transition:opacity .55s ease,transform .55s cubic-bezier(.2,.8,.2,1),filter .55s ease}
@@ -464,6 +465,7 @@ const segValid = s => !s[0] || !s[1] || segMin(s) > 0;
     saisonDebut: '2026-07-10',
     paie: { jour: 0 },
     revolut: { libelle: 'CERDAGNE, COSY' },
+    bank: { mode: 'direct', appId: '', privateKey: '', relayUrl: '', relayToken: '', aspsp: 'Revolut', country: 'FR', session: '', account: '', accountName: '', validUntil: '', lastSync: 0, lastErr: '', pendingState: '' },
     look: { accent: 'or', oled: false },
     fx: { sons: true, confettis: true },
     meteo: { actif: true, ville: 'Saillagouse' },
@@ -881,7 +883,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.6.1';
+const VERSION = '1.7';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -1318,13 +1320,14 @@ function vSettings(embedded) {
   let h = embedded ? '' : head('Centime ' + VERSION, 'Réglages');
   h += `<div class="card"><h3>Toi</h3>${fTxt('prenom', 'Prénom', 'pour te saluer', 'Ton prénom')}</div>`;
   h += ghWizard();
+  h += bankCard();
   h += `<div class="card"><h3>Apparence & effets</h3>
     <div class="fld" style="padding-top:0"><label>Thème</label><div class="seg" style="width:190px">${[['auto', 'Auto'], ['dark', 'Sombre'], ['light', 'Clair']].map(o => `<button data-a="theme" data-v="${o[0]}" class="${st.theme === o[0] ? 'on' : ''}">${o[1]}</button>`).join('')}</div></div>
     <div class="fld"><label>Couleur</label><div class="sws">${Object.entries(ACCENTS).map(([k, v]) => `<button data-a="accent" data-v="${k}" class="swc ${(st.look.accent || 'or') === k ? 'on' : ''}" style="background:linear-gradient(135deg,${v[1]},${v[2]})" aria-label="${v[0]}"></button>`).join('')}</div></div>
     ${fSw('look.oled', 'Mode nuit de livraison', 'noir pur, idéal la nuit et pour la batterie')}
     ${fSw('fx.sons', 'Son « cha-ching »', 'quand tu gagnes des heures sup ou un succès')}${fSw('fx.confettis', 'Confettis')}
     ${fNum('paie.jour', 'Jour de paie', '0 = dernier jour du mois (le 30/09 sur ton bulletin)')}</div>`;
-  h += `<div class="card"><h3>Revolut 💸<span class="r">salaire détecté</span></h3>${fTxt('revolut.libelle', 'Libellé de ton salaire', 'mots cherchés dans tes virements reçus, séparés par des virgules', 'CERDAGNE, COSY')}
+  h += `<div class="card"><h3>Ton salaire sur Revolut 💸<span class="r">détection</span></h3>${fTxt('revolut.libelle', 'Libellé de ton salaire', 'mots cherchés dans tes virements reçus, séparés par des virgules', 'CERDAGNE, COSY')}
     <div class="btns" style="margin-top:8px"><button class="btn" data-a="payOpen" data-ym="${contractYm(E.ymOf(today()))}">🎰 Ma paie est tombée</button></div></div>`;
   h += `<div class="card"><h3>Météo<span class="r"><button class="btn sm ghost" data-a="wxRefresh">Actualiser</button></span></h3>${fSw('meteo.actif', 'Afficher la météo sur l’accueil', 'neige, verglas et vent en Cerdagne')}${fSel('meteo.ville', 'Ville', '', Object.keys(TOWNS).map(t => [t, t]))}</div>`;
   h += `<div class="card"><h3>Objectif d’épargne 🐷</h3>${fSw('epargne.actif', 'Activer', 'une barre qui se remplit avec tes heures sup')}${st.epargne.actif ? fTxt('epargne.nom', 'Pour quoi ?', '', 'Ex. nouveau téléphone') + fNum('epargne.objectif', 'Objectif', '€') + fNum('epargne.part', 'Part des heures sup mise de côté', '% du net des heures sup') + fNum('epargne.deja', 'Déjà de côté', '€') : ''}</div>`;
@@ -1868,7 +1871,7 @@ function ghFetch(g, method, body) {
   return fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
 }
 const ghErr = s => s === 401 ? 'jeton invalide ou expiré' : s === 403 ? 'le jeton n\'a pas le droit d\'écrire (Contents : Read and write)' : s === 404 ? 'dépôt ou branche introuvable' : s === 409 || s === 422 ? 'conflit, réessaie' : 'erreur ' + s;
-function exportData() { const d = clone(S); d.settings.github = Object.assign({}, d.settings.github, { token: '', lastErr: '' }); d.app = 'centime'; d.exportedAt = new Date().toISOString(); return d; }
+function exportData() { const d = clone(S); d.settings.github = Object.assign({}, d.settings.github, { token: '', lastErr: '' }); d.settings.bank = { mode: d.settings.bank.mode, aspsp: d.settings.bank.aspsp, country: d.settings.bank.country }; d.app = 'centime'; d.exportedAt = new Date().toISOString(); return d; }
 const b64e = str => { const b = new TextEncoder().encode(str); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
 const b64d = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g, '')), c => c.charCodeAt(0)));
 function setSync(state) { sync.state = state; const c = document.getElementById('cloud'); if (c) c.className = 'icbtn ' + state; }
@@ -1915,10 +1918,10 @@ async function ghLoad() {
   } catch (e) { setSync('err'); toast('GitHub : ' + (e.message === 'Failed to fetch' ? 'pas de connexion' : e.message)); }
 }
 function applyImport(d, msg) {
-  const keep = S.settings.github, keepLock = S.settings.lock;
+  const keep = S.settings.github, keepLock = S.settings.lock, keepBank = S.settings.bank;
   const s = hydrate(Object.assign({}, d, { onboarded: true }));
   s.settings.github = Object.assign({}, s.settings.github, { owner: keep.owner || s.settings.github.owner, repo: keep.repo || s.settings.github.repo, branch: keep.branch, path: keep.path, token: keep.token, auto: keep.auto });
-  s.settings.lock = keepLock; S = s; S.onboarded = true;
+  s.settings.lock = keepLock; s.settings.bank = keepBank; S = s; S.onboarded = true;
   save(false); recompute(); ui.anim = true; render(); toast(msg);
 }
 async function exportFile() {
@@ -2643,6 +2646,7 @@ async function ghSetup() {
 /* ---------- après l'écran de chargement ---------- */
 function afterSplash() {
   if (lockOn()) showLock();
+  setTimeout(bankAuto, lockOn() ? 4000 : 800);
   if (!S.onboarded) { welcome(); return; }
   const t = today(), ym = E.ymOf(t);
   if (payDate(ym) === t && (S.fx || {}).payday !== ym && t >= S.settings.contrat.debut && t <= E.addDays(S.settings.contrat.fin, 31)) {
@@ -2911,13 +2915,209 @@ document.addEventListener('change', async e => {
   el.value = ''; refreshPay();
 });
 
+/* ============================================================
+   BANQUE : Revolut via Enable Banking (prestataire agréé DSP2)
+   La clé privée reste sur ce téléphone (jamais dans GitHub ni dans les sauvegardes).
+   ============================================================ */
+const EB_API = 'https://api.enablebanking.com';
+const bankCfg = () => S.settings.bank;
+const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, '');
+const b64urlStr = s => b64u(new TextEncoder().encode(s));
+// PKCS#1 (« BEGIN RSA PRIVATE KEY ») → PKCS#8 pour WebCrypto
+function derLen(n) { if (n < 128) return [n]; const b = []; while (n) { b.unshift(n & 255); n >>= 8; } return [0x80 | b.length, ...b]; }
+function pkcs1to8(der) {
+  const algo = [0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00];
+  const oct = [0x04, ...derLen(der.length), ...der], body = [0x02, 0x01, 0x00, ...algo, ...oct];
+  return new Uint8Array([0x30, ...derLen(body.length), ...body]);
+}
+async function importKey(pem) {
+  const isPk1 = /BEGIN RSA PRIVATE KEY/.test(pem);
+  const b = atob(pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, ''));
+  let der = Uint8Array.from(b, c => c.charCodeAt(0));
+  if (isPk1) der = pkcs1to8([...der]);
+  return crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+}
+let ebKeyCache = null;
+async function ebJwt() {
+  const B = bankCfg();
+  if (!ebKeyCache || ebKeyCache.pem !== B.privateKey) ebKeyCache = { pem: B.privateKey, key: await importKey(B.privateKey) };
+  const now = Math.floor(Date.now() / 1000);
+  const h = b64urlStr(JSON.stringify({ typ: 'JWT', alg: 'RS256', kid: B.appId.trim() }));
+  const p = b64urlStr(JSON.stringify({ iss: 'enablebanking.com', aud: 'api.enablebanking.com', iat: now, exp: now + 3600 }));
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', ebKeyCache.key, new TextEncoder().encode(h + '.' + p));
+  return h + '.' + p + '.' + b64u(sig);
+}
+async function eb(path, method = 'GET', body) {
+  const B = bankCfg(), relay = B.mode === 'relais';
+  if (relay ? !(B.relayUrl && B.relayToken) : !(B.appId && B.privateKey)) throw new Error(relay ? 'adresse ou mot de passe du relais manquant' : 'identifiant d’application ou clé privée manquant');
+  const headers = { 'Content-Type': 'application/json' };
+  if (relay) headers['X-Relay-Token'] = B.relayToken.trim(); else headers.Authorization = 'Bearer ' + await ebJwt();
+  let r;
+  try { r = await fetch((relay ? B.relayUrl.trim().replace(/\/$/, '') : EB_API) + path, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); }
+  catch (e) { throw new Error(relay ? 'relais injoignable (pas de réseau ou mauvaise adresse)' : 'ton iPhone bloque l’accès direct à Enable Banking : passe au relais (étape bonus)'); }
+  const txt = await r.text(); let j = null; try { j = JSON.parse(txt); } catch (e) { }
+  if (!r.ok) throw new Error((j && (j.message || j.detail || j.error)) || ('erreur ' + r.status) + (r.status === 401 ? ' : identifiant ou clé refusés' : r.status === 403 ? ' : accès refusé' : ''));
+  return j;
+}
+async function bankStart() {
+  const B = bankCfg();
+  // Revolut en France : selon le compte, la banque est rangée en France (FR) ou en Lituanie (LT, Revolut Bank UAB)
+  let asp = null;
+  for (const cc of [...new Set([B.country || 'FR', 'FR', 'LT'])]) {
+    const list = await eb('/aspsps?country=' + cc + '&psu_type=personal'), all = (list && list.aspsps) || [];
+    asp = all.find(a => a.name.toLowerCase() === (B.aspsp || 'revolut').toLowerCase()) || all.find(a => /revolut/i.test(a.name));
+    if (asp) break;
+  }
+  if (!asp) throw new Error('Revolut introuvable chez Enable Banking (France et Lituanie)');
+  const days = Math.max(1, Math.min(180, Math.floor((asp.maximum_consent_validity || 7776000) / 86400) - 1));
+  const state = 'centime-' + b64u(crypto.getRandomValues(new Uint8Array(9)));
+  const res = await eb('/auth', 'POST', { access: { valid_until: new Date(Date.now() + days * 864e5).toISOString() }, aspsp: { name: asp.name, country: asp.country }, state, redirect_url: appUrl(), psu_type: 'personal', language: 'fr' });
+  B.aspsp = asp.name; B.pendingState = state; save(false);
+  return res.url;
+}
+async function bankSession(code) {
+  const B = bankCfg();
+  const s = await eb('/sessions', 'POST', { code: code.trim() });
+  const accs = s.accounts || [];
+  const acc = accs.find(a => (a.currency || 'EUR') === 'EUR') || accs[0];
+  if (!acc) throw new Error('aucun compte autorisé');
+  Object.assign(B, { session: s.session_id, account: acc.uid, accountName: acc.name || (acc.account_id && acc.account_id.iban ? '…' + acc.account_id.iban.slice(-4) : 'Compte'), validUntil: (s.access && s.access.valid_until) || '', lastErr: '', pendingState: '' });
+  save(false);
+  return accs.length;
+}
+function txToSalary(t) {
+  const amt = parseFloat((t.transaction_amount || {}).amount);
+  const credit = t.credit_debit_indicator ? t.credit_debit_indicator === 'CRDT' : amt > 0;
+  if (!credit || !(Math.abs(amt) > 0) || (t.status && t.status !== 'BOOK')) return null;
+  const k = t.booking_date || t.value_date || t.transaction_date; if (!k) return null;
+  const desc = [(t.debtor || {}).name, ...(t.remittance_information || []), t.note].filter(Boolean).join(' ');
+  const kws = String(S.settings.revolut.libelle || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+  if (!(kws.length ? kws.some(w => desc.toLowerCase().includes(w)) : /salaire|paie|salary/i.test(desc))) return null;
+  return { k: k.slice(0, 10), ym: salaryMonth(k.slice(0, 10)), net: Math.round(Math.abs(amt) * 100) / 100, desc };
+}
+async function bankSync(manual) {
+  const B = bankCfg(); if (!B.account) { if (manual) toast('Connecte d’abord ton compte Revolut'); return; }
+  try {
+    const from = E.addDays(today(), -75), found = []; let ck = null, n = 0;
+    do {
+      const q = '/accounts/' + encodeURIComponent(B.account) + '/transactions?date_from=' + from + (ck ? '&continuation_key=' + encodeURIComponent(ck) : '');
+      const r = await eb(q); (r.transactions || []).forEach(t => { const x = txToSalary(t); if (x) found.push(x); });
+      ck = r.continuation_key; n++;
+    } while (ck && n < 10);
+    B.lastSync = Date.now(); B.lastErr = '';
+    const fresh = found.filter(f => { const mo = S.months[f.ym] || {}; return !(mo.reel && mo.reel.net != null); }).sort((a, b) => a.k < b.k ? -1 : 1);
+    fresh.forEach(f => saveSalary(f.ym, f.net, f.k));
+    save(); recompute(); render();
+    if (fresh.length) { const last = fresh[fresh.length - 1]; slotMachine(last.ym, last.net); }
+    else if (manual) toast(found.length ? '✓ Synchronisé : rien de nouveau' : '✓ Synchronisé : aucun salaire sur 75 jours (libellé « ' + S.settings.revolut.libelle + ' » ?)');
+  } catch (e) {
+    B.lastErr = e.message; save(false);
+    if (/expired|expir|session|consent|401/i.test(e.message) && B.session) B.lastErr = 'Autorisation Revolut expirée : reconnecte ton compte';
+    if (manual) toast('Revolut : ' + B.lastErr);
+    if (ui.tab === 'settings') render();
+  }
+}
+function bankAuto() { const B = bankCfg(); if (B.account && Date.now() - (B.lastSync || 0) > 30 * 60e3 && navigator.onLine !== false) bankSync(false); }
+
+/* ----- page de retour après l'autorisation Revolut (s'ouvre dans Safari) ----- */
+function bankReturnPage() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('code') && !q.has('error')) return false;
+  if (!/^centime-/.test(q.get('state') || '')) return false;
+  const sp = document.getElementById('splash'); if (sp) sp.remove();
+  const el = document.createElement('div'); el.className = 'lock'; el.style.gap = '14px';
+  const code = q.get('code') || '';
+  // si cette même session de navigateur a lancé l'autorisation, on termine tout seul
+  const same = bankCfg().pendingState && bankCfg().pendingState === q.get('state');
+  el.innerHTML = q.has('error')
+    ? `<img src="${ICON}" class="lk-logo" alt=""><div class="lk-t">Autorisation refusée</div><p style="max-width:320px;text-align:center;color:rgba(255,255,255,.7)">${esc(q.get('error_description') || q.get('error'))}</p><a class="btn pri" style="flex:0 0 auto;min-height:50px;width:100%;max-width:300px;text-decoration:none" href="${appUrl()}">Revenir à Centime</a>`
+    : `<img src="${ICON}" class="lk-logo" alt=""><div class="lk-t">✅ Revolut a autorisé Centime</div>
+      ${same ? '<p style="max-width:320px;text-align:center;color:rgba(255,255,255,.7)">Connexion en cours…</p>' : `<p style="max-width:330px;text-align:center;color:rgba(255,255,255,.75);line-height:1.45">Dernière étape : <b>copie ce code</b>, ouvre Centime depuis son icône, puis Réglages → Revolut → <b>Coller le code</b>.</p>
+      <div style="max-width:330px;word-break:break-all;background:rgba(255,255,255,.08);border-radius:12px;padding:12px;font:600 13px ui-monospace,monospace;color:#f6d68c" id="ebCode">${esc(code)}</div>
+      <button class="btn pri" style="flex:0 0 auto;min-height:50px;width:100%;max-width:300px" id="ebCopy">📋 Copier le code</button>
+      <p style="font-size:12px;color:rgba(255,255,255,.45)">Le code ne sert qu’une fois et expire vite : colle-le tout de suite.</p>`}`;
+  document.body.appendChild(el);
+  const cp = document.getElementById('ebCopy');
+  if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(code); cp.textContent = '✓ Copié ! Ouvre maintenant Centime'; } catch (e) { const r = document.createRange(); r.selectNodeContents(document.getElementById('ebCode')); getSelection().removeAllRanges(); getSelection().addRange(r); cp.textContent = 'Sélectionné : touche « Copier »'; } };
+  if (same) bankSession(code).then(n => { history.replaceState(null, '', appUrl()); el.remove(); toast('✓ Revolut connecté (' + n + ' compte' + (n > 1 ? 's' : '') + ')'); render(); bankSync(true); }).catch(e => { el.querySelector('p').textContent = 'Erreur : ' + e.message; });
+  return true;
+}
+
+/* ----- carte Réglages : assistant de connexion ----- */
+function bankCard() {
+  const B = bankCfg(), connected = !!B.account, relay = B.mode === 'relais';
+  const exp = B.validUntil ? new Date(B.validUntil) : null, days = exp ? Math.round((exp - Date.now()) / 864e5) : null;
+  if (connected) return `<div class="card"><h3>Revolut connecté<span class="r"><span class="badge ${days != null && days < 7 ? 'o' : 'g'}">✓ ${esc(B.accountName || 'compte')}</span></span></h3>
+    <div class="rows"><div class="row"><span class="l">Dernière lecture</span><span class="v">${B.lastSync ? new Date(B.lastSync).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : 'jamais'}</span></div>
+    ${days != null ? `<div class="row"><span class="l">Autorisation valable encore</span><span class="v">${days} jours</span></div>` : ''}
+    <div class="row"><span class="l">Passage par</span><span class="v">${relay ? 'ton relais' : 'direct'}</span></div></div>
+    ${B.lastErr ? `<p class="tiny neg" style="margin-top:6px">${esc(B.lastErr)}</p>` : ''}
+    <p class="tiny" style="margin:8px 0 10px">À chaque ouverture de Centime (au plus toutes les 30 min), l’appli lit tes virements reçus : dès que ton salaire apparaît, la machine à sous se lance.</p>
+    <div class="btns"><button class="btn pri" data-a="bankSync">🔄 Lire maintenant</button><button class="btn" data-a="bankAuth">Renouveler</button></div>
+    <div class="btns" style="margin-top:8px"><button class="btn dang" data-a="bankOff">Déconnecter</button></div></div>`;
+  const step = (n, t, body) => `<div class="step"><b>${n}</b><div style="flex:1;min-width:0"><div class="st-t">${t}</div>${body}</div></div>`;
+  return `<div class="card"><h3>Connexion Revolut<span class="r">via Enable Banking</span></h3>
+    <p class="tiny" style="margin-bottom:6px">Lecture seule, gratuite pour un usage perso. Tu t’identifies chez Revolut : Centime ne voit jamais ton mot de passe.</p>
+    ${step(1, 'Crée ton compte et ton application', `<div class="tiny">Sur Enable Banking : application <b>Production</b>, nom « Centime », et cette adresse de redirection :</div>
+      <div class="copyrow"><code>${esc(appUrl())}</code><button class="btn sm" data-a="copyTxt" data-t="${esc(appUrl())}">Copier</button></div>
+      <a class="btn sm" style="margin-top:8px" href="https://enablebanking.com/cp/applications" target="_blank" rel="noopener">Ouvrir Enable Banking ↗</a>`)}
+    ${step(2, 'Relie ton compte Revolut à l’application', '<div class="tiny">Dans la liste de tes applications : « Activate by linking accounts » → Revolut → autorise dans l’appli Revolut. L’application passe en « Restricted production ».</div>')}
+    ${step(3, 'Donne la clé à Centime', `<div class="fld" style="padding:6px 0;border:0"><label>Identifiant d’application<small>Application ID (format xxxxxxxx-xxxx-…)</small></label><input type="text" data-set="bank.appId" data-type="str" value="${esc(B.appId)}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ID"></div>
+      <input type="file" id="pemFile" accept=".pem,.key,.txt,application/x-pem-file,text/plain" style="display:none">
+      <div class="btns"><button class="btn sm" style="flex:1" data-a="pemPick">${B.privateKey ? '✓ Clé privée chargée · changer' : '🔑 Choisir le fichier .pem'}</button></div>
+      <div class="tiny" style="margin-top:6px">Le fichier téléchargé à l’étape 1 (dans Fichiers → Téléchargements). Il reste sur ce téléphone, jamais dans GitHub.</div>`)}
+    ${step(4, 'Connecte Revolut à Centime', `<button class="btn pri" style="width:100%;margin-top:4px" data-a="bankAuth">🔗 Autoriser Centime chez Revolut</button>
+      <div class="tiny" style="margin-top:8px">Revolut te demande de valider, puis une page « Revolut a autorisé Centime » s’ouvre dans Safari avec un code : copie-le et reviens ici.</div>
+      <input class="inp" id="ebCodeIn" placeholder="Colle le code ici" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:8px">
+      <button class="btn" style="width:100%;margin-top:8px" data-a="bankCode">✓ Valider le code</button>`)}
+    ${B.lastErr ? `<p class="tiny neg" style="margin-top:8px;font-weight:700">${esc(B.lastErr)}</p>` : ''}
+    <details ${relay ? 'open' : ''}><summary>Étape bonus : passer par un relais</summary><div class="help">
+      <p>Seulement si l’étape 4 affiche « ton iPhone bloque l’accès direct ». Le relais est un mini-serveur gratuit chez Cloudflare qui garde ta clé et parle à Enable Banking à la place de l’iPhone.</p>
+      ${fSel('bank.mode', 'Passage', '', [['direct', 'Direct'], ['relais', 'Par mon relais']])}
+      ${relay ? fTxt('bank.relayUrl', 'Adresse du relais', '', 'https://centime-relais.xxx.workers.dev') + fTxt('bank.relayToken', 'Mot de passe du relais', '', 'RELAY_TOKEN', 'password') : ''}
+      <div class="btns" style="margin-top:8px"><button class="btn sm" style="flex:1" data-a="copyRelay">📋 Copier le code du relais</button></div>
+      ${B.privateKey ? '<div class="btns" style="margin-top:8px"><button class="btn sm" style="flex:1" data-a="copyKey">🔑 Copier ma clé pour PRIVATE_KEY</button></div>' : ''}</div></details></div>`;
+}
+
+Object.assign(A, {
+  copyTxt(el) { navigator.clipboard.writeText(el.dataset.t).then(() => toast('Copié ✓'), () => toast('Appuie longuement sur l’adresse pour la copier')); },
+  pemPick() { document.getElementById('pemFile').click(); },
+  copyKey() { if (!confirm('Copier ta clé privée ? Colle-la uniquement dans Cloudflare (secret PRIVATE_KEY), nulle part ailleurs.')) return; navigator.clipboard.writeText(bankCfg().privateKey).then(() => toast('Clé copiée : colle-la dans PRIVATE_KEY'), () => toast('Copie impossible')); },
+  async bankAuth(el) {
+    const B = bankCfg(); el.disabled = true; const old = el.textContent; el.textContent = 'Connexion à Enable Banking…';
+    try { const url = await bankStart(); B.lastErr = ''; save(false); location.href = url; }
+    catch (e) { B.lastErr = e.message; save(false); render(); toast('Revolut : ' + e.message); }
+    finally { el.disabled = false; el.textContent = old; }
+  },
+  async bankCode() {
+    const c = (document.getElementById('ebCodeIn') || {}).value || ''; if (!c.trim()) { toast('Colle le code reçu dans Safari'); return; }
+    try { const n = await bankSession(c); toast('✓ Revolut connecté (' + n + ' compte' + (n > 1 ? 's' : '') + ')'); render(); bankSync(true); }
+    catch (e) { bankCfg().lastErr = e.message; save(false); render(); toast('Revolut : ' + e.message); }
+  },
+  bankSync() { bankSync(true); },
+  bankOff() { if (!confirm('Déconnecter Revolut de Centime ?')) return; Object.assign(bankCfg(), { session: '', account: '', accountName: '', validUntil: '', lastSync: 0, lastErr: '' }); save(false); render(); toast('Revolut déconnecté'); },
+  async copyRelay() {
+    try { const r = await fetch('relay/worker.js', { cache: 'no-store' }); const t = await r.text(); await navigator.clipboard.writeText(t); toast('Code du relais copié ✓'); }
+    catch (e) { toast('Ouvre ' + appUrl() + 'relay/worker.js et copie tout le texte'); }
+  },
+});
+document.addEventListener('change', async e => {
+  const el = e.target; if (el.id !== 'pemFile' || !el.files[0]) return;
+  const txt = await el.files[0].text();
+  if (!/BEGIN (RSA )?PRIVATE KEY/.test(txt)) { toast('Ce fichier n’est pas une clé privée (.pem)'); el.value = ''; return; }
+  try { await importKey(txt); bankCfg().privateKey = txt.trim(); bankCfg().lastErr = ''; save(false); render(); toast('🔑 Clé privée enregistrée sur ce téléphone'); }
+  catch (x) { toast('Clé illisible : ' + x.message); }
+  el.value = '';
+});
+
 /* ---------- démarrage ---------- */
 recompute();
 checkBadges(false);
 render();
-splash();
+if (!bankReturnPage()) splash();
 loadWeather();
 setInterval(() => loadWeather(), 30 * 60e3);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) bankAuto(); });
 
 </script>
 </body>
