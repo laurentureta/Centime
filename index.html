@@ -205,6 +205,8 @@ details[open] summary::after{content:" ⌄"}
 .sheet h2{font-size:22px;font-weight:800;letter-spacing:-.02em;text-transform:capitalize}
 .sheet .sh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px}
 .sheet .sec{margin-top:16px}
+.bsec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.bsec>.lb{font-size:12px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 .sheet .sec>.lb{font-size:12px;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
 /* toast */
 .toast{position:fixed;left:50%;top:calc(var(--sat) + 10px);transform:translate(-50%,-140%);z-index:60;background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:700;font-size:14px;transition:transform .3s cubic-bezier(.2,.8,.2,1);box-shadow:var(--shadow);max-width:90vw;text-align:center}
@@ -883,7 +885,7 @@ const ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl
    ============================================================ */
 const E = Engine;
 const KEY = 'centime.v1';
-const VERSION = '1.7.1';
+const VERSION = '1.8';
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOISC = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 const JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
@@ -2646,7 +2648,7 @@ async function ghSetup() {
 /* ---------- après l'écran de chargement ---------- */
 function afterSplash() {
   if (lockOn()) showLock();
-  setTimeout(bankAuto, lockOn() ? 4000 : 800);
+  if (!pushLaunch()) setTimeout(bankAuto, lockOn() ? 4000 : 800);
   if (!S.onboarded) { welcome(); return; }
   const t = today(), ym = E.ymOf(t);
   if (payDate(ym) === t && (S.fx || {}).payday !== ym && t >= S.settings.contrat.debut && t <= E.addDays(S.settings.contrat.fin, 31)) {
@@ -2845,6 +2847,7 @@ function saveSalary(ym, net, k) {
 /* ----- machine à sous ----- */
 function slotMachine(ym, net) {
   closeSheet();
+  const prev = document.getElementById('slot'); if (prev) prev.remove();
   const M = R.months[ym], est = M ? M.pay.net : null, d = est != null ? r2(net - est) : null, exact = d != null && Math.abs(d) < 0.005;
   const txt = n2(net), chars = [...txt];
   const el = document.createElement('div'); el.className = 'slotm'; el.id = 'slot';
@@ -2868,6 +2871,7 @@ function slotMachine(ym, net) {
   const total = 1300 + (strips.length - 1) * 320 + 150;
   setTimeout(() => {
     clearInterval(tick);
+    if (!el.isConnected) return;
     el.classList.add(exact ? 'win' : 'done');
     const v = document.getElementById('slV');
     if (exact) { v.innerHTML = '<b>🎯 JACKPOT !</b><span>Identique à l’estimation Centime, au centime près.</span>'; celebrate(null, true); setTimeout(() => confetti(160), 700); }
@@ -2995,7 +2999,13 @@ function txToSalary(t) {
   if (!(kws.length ? kws.some(w => desc.toLowerCase().includes(w)) : /salaire|paie|salary/i.test(desc))) return null;
   return { k: k.slice(0, 10), ym: salaryMonth(k.slice(0, 10)), net: Math.round(Math.abs(amt) * 100) / 100, desc };
 }
-async function bankSync(manual) {
+let bankBusy = null;
+function bankSync(manual) {
+  if (bankBusy) { if (manual) toast('Lecture en cours…'); return bankBusy; }
+  bankBusy = bankSyncRun(manual).finally(() => { bankBusy = null; });
+  return bankBusy;
+}
+async function bankSyncRun(manual) {
   const B = bankCfg(); if (!B.account) { if (manual) toast('Connecte d’abord ton compte Revolut'); return; }
   try {
     const from = E.addDays(today(), -75), found = []; let ck = null, n = 0;
@@ -3017,7 +3027,71 @@ async function bankSync(manual) {
     if (ui.tab === 'settings') render();
   }
 }
-function bankAuto() { const B = bankCfg(); if (B.account && Date.now() - (B.lastSync || 0) > 30 * 60e3 && navigator.onLine !== false) bankSync(false); }
+function bankAuto() {
+  const B = bankCfg();
+  if (B.account && Date.now() - Math.max(B.lastSync || 0, B.lastTry || 0) > 30 * 60e3 && navigator.onLine !== false) { B.lastTry = Date.now(); save(false); bankSync(false); }
+  pushRefresh(false);
+}
+
+/* ----- notifications : salaire tombé (vérifié par le relais 3 fois par jour, même appli fermée) ----- */
+const pushOk = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const standalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const b64uBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+const knownSalaries = () => Object.values(S.months).filter(m => m && m.reel && m.reel.net != null && m.recu).map(m => m.recu + '|' + Number(m.reel.net).toFixed(2));
+async function pushSend(sub) {
+  const B = bankCfg(), j = sub.toJSON();
+  await eb('/push/abonner', 'POST', { subscription: { endpoint: j.endpoint, keys: j.keys }, account_uid: B.account || null, valid_until: B.validUntil || null, mots: S.settings.revolut.libelle || '', vus: knownSalaries() });
+  B.push = { endpoint: j.endpoint, on: (B.push && B.push.on) || Date.now(), refreshed: Date.now() }; save(false);
+}
+async function pushEnable() {
+  const B = bankCfg();
+  if (B.mode !== 'relais') throw new Error('les notifications passent par le relais');
+  if (!pushOk()) throw new Error(standalone() ? 'notifications non prises en charge (iOS 16.4 minimum)' : 'ouvre Centime depuis son icône sur l’écran d’accueil');
+  const perm = await Notification.requestPermission();   // doit être le 1er « await » (geste de l’utilisateur)
+  if (perm !== 'granted') throw new Error('notifications refusées : Réglages de l’iPhone › Notifications › Centime');
+  const reg = await navigator.serviceWorker.ready;
+  const { publicKey } = await eb('/push/cle');
+  let sub = await reg.pushManager.getSubscription();
+  if (sub && sub.options && sub.options.applicationServerKey && b64u(sub.options.applicationServerKey) !== publicKey) { await sub.unsubscribe(); sub = null; }
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(publicKey) });
+  await pushSend(sub);
+  await eb('/push/test', 'POST', { endpoint: sub.endpoint });
+}
+async function pushDisable() {
+  const B = bankCfg(); let sub = null;
+  try { sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); } catch (e) { }
+  try { await eb('/push/desabonner', 'POST', { endpoint: (sub && sub.endpoint) || (B.push || {}).endpoint }); } catch (e) { }
+  if (sub) await sub.unsubscribe().catch(() => { });
+  B.push = null; save(false);
+}
+async function pushRefresh(force) {
+  const B = bankCfg();
+  if (!B.push || !pushOk() || B.mode !== 'relais' || (!force && Date.now() - (B.push.refreshed || 0) < 864e5)) return;
+  try {
+    const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+    if (!sub) { B.push = null; save(false); if (ui.tab === 'settings') render(); return; }
+    await pushSend(sub);
+  } catch (e) { }
+}
+// Salaire annoncé par une notification : on l’enregistre tout de suite, puis on confirme en lisant Revolut.
+function salaryFromPush(net, le) {
+  const go = () => {
+    if (document.getElementById('lock')) return setTimeout(go, 600);
+    net = Math.round(parseFloat(net) * 100) / 100;
+    if (net > 0 && /^\d{4}-\d\d-\d\d$/.test(le || '')) {
+      const ym = salaryMonth(le), mo = S.months[ym] || {};
+      if (!(mo.reel && mo.reel.net != null)) { saveSalary(ym, net, le); save(); recompute(); render(); slotMachine(ym, net); }
+    }
+    if (bankCfg().account) { bankCfg().lastTry = Date.now(); bankSync(false); }
+  };
+  go();
+}
+function pushLaunch() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('salaire')) { history.replaceState(null, '', appUrl()); salaryFromPush(q.get('salaire'), q.get('le')); return true; }
+  return false;
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { const d = e.data || {}; if (d.type === 'salaire') salaryFromPush(d.net, d.le); });
 
 /* ----- page de retour après l'autorisation Revolut (s'ouvre dans Safari) ----- */
 function bankReturnPage() {
@@ -3039,11 +3113,20 @@ function bankReturnPage() {
   document.body.appendChild(el);
   const cp = document.getElementById('ebCopy');
   if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(code); cp.textContent = '✓ Copié ! Ouvre maintenant Centime'; } catch (e) { const r = document.createRange(); r.selectNodeContents(document.getElementById('ebCode')); getSelection().removeAllRanges(); getSelection().addRange(r); cp.textContent = 'Sélectionné : touche « Copier »'; } };
-  if (same) bankSession(code).then(n => { history.replaceState(null, '', appUrl()); el.remove(); toast('✓ Revolut connecté (' + n + ' compte' + (n > 1 ? 's' : '') + ')'); render(); bankSync(true); }).catch(e => { el.querySelector('p').textContent = 'Erreur : ' + e.message; });
+  if (same) bankSession(code).then(n => { history.replaceState(null, '', appUrl()); el.remove(); toast('✓ Revolut connecté (' + n + ' compte' + (n > 1 ? 's' : '') + ')'); render(); bankSync(true); pushRefresh(true); }).catch(e => { el.querySelector('p').textContent = 'Erreur : ' + e.message; });
   return true;
 }
 
 /* ----- carte Réglages : assistant de connexion ----- */
+function pushBlock(B, relay) {
+  const head = '<div class="bsec"><div class="lb">🔔 Me prévenir quand le salaire tombe</div>';
+  if (!relay) return head + '<p class="tiny">Disponible en passant par le relais (étape bonus).</p></div>';
+  if (B.push) return head + `<p class="tiny">✓ Activé. Le relais vérifie ton compte 3 fois par jour (vers 7 h 30, 12 h 30 et 18 h 30), même quand Centime est fermé. Touche la notification : le salaire s’enregistre et la machine à sous se lance.</p>
+    <div class="btns" style="margin-top:8px"><button class="btn" data-a="pushTest">Envoyer un test</button><button class="btn" data-a="pushOff">Désactiver</button></div></div>`;
+  if (!pushOk() || !standalone()) return head + '<p class="tiny">Ouvre Centime depuis son <b>icône sur l’écran d’accueil</b> (pas depuis Safari) pour activer les notifications. Pas encore installé ? Dans Safari : Partager → « Sur l’écran d’accueil ».</p></div>';
+  return head + `<p class="tiny">Une notification sur ton iPhone dès que le virement arrive, même appli fermée.</p>
+    <div class="btns" style="margin-top:8px"><button class="btn pri" data-a="pushOn">🔔 Activer les notifications</button></div></div>`;
+}
 function bankCard() {
   const B = bankCfg(), connected = !!B.account, relay = B.mode === 'relais';
   const exp = B.validUntil ? new Date(B.validUntil) : null, days = exp ? Math.round((exp - Date.now()) / 864e5) : null;
@@ -3054,7 +3137,9 @@ function bankCard() {
     ${B.lastErr ? `<p class="tiny neg" style="margin-top:6px">${esc(B.lastErr)}</p>` : ''}
     <p class="tiny" style="margin:8px 0 10px">À chaque ouverture de Centime (au plus toutes les 30 min), l’appli lit tes virements reçus : dès que ton salaire apparaît, la machine à sous se lance.</p>
     <div class="btns"><button class="btn pri" data-a="bankSync">🔄 Lire maintenant</button><button class="btn" data-a="bankAuth">Renouveler</button></div>
-    <div class="btns" style="margin-top:8px"><button class="btn dang" data-a="bankOff">Déconnecter</button></div></div>`;
+    ${pushBlock(B, relay)}
+    ${relay && B.privateKey ? `<div class="bsec"><div class="lb">🔒 Ta clé privée</div><p class="tiny">Le relais a déjà ta clé : elle n’a plus besoin d’être dans ce téléphone.</p><div class="btns" style="margin-top:8px"><button class="btn" data-a="keyForget">🗑️ Retirer la clé de ce téléphone</button></div></div>` : ''}
+    <div class="btns" style="margin-top:12px"><button class="btn dang" data-a="bankOff">Déconnecter</button></div></div>`;
   const step = (n, t, body) => `<div class="step"><b>${n}</b><div style="flex:1;min-width:0"><div class="st-t">${t}</div>${body}</div></div>`;
   return `<div class="card"><h3>Connexion Revolut<span class="r">via Enable Banking</span></h3>
     <p class="tiny" style="margin-bottom:6px">Lecture seule, gratuite pour un usage perso. Tu t’identifies chez Revolut : Centime ne voit jamais ton mot de passe.</p>
@@ -3096,11 +3181,28 @@ Object.assign(A, {
   },
   async bankCode() {
     const c = (document.getElementById('ebCodeIn') || {}).value || ''; if (!c.trim()) { toast('Colle le code reçu dans Safari'); return; }
-    try { const n = await bankSession(c); toast('✓ Revolut connecté (' + n + ' compte' + (n > 1 ? 's' : '') + ')'); render(); bankSync(true); }
+    try { const n = await bankSession(c); toast('✓ Revolut connecté (' + n + ' compte' + (n > 1 ? 's' : '') + ')'); render(); bankSync(true); pushRefresh(true); }
     catch (e) { bankCfg().lastErr = e.message; save(false); render(); toast('Revolut : ' + e.message); }
   },
   bankSync() { bankSync(true); },
-  bankOff() { if (!confirm('Déconnecter Revolut de Centime ?')) return; Object.assign(bankCfg(), { session: '', account: '', accountName: '', validUntil: '', lastSync: 0, lastErr: '' }); save(false); render(); toast('Revolut déconnecté'); },
+  async bankOff() {
+    if (!confirm('Déconnecter Revolut de Centime ? L’autorisation est aussi annulée chez Enable Banking.')) return;
+    const B = bankCfg();
+    if (B.session) { try { await eb('/sessions/' + encodeURIComponent(B.session), 'DELETE'); } catch (e) { } }
+    if (B.push) await pushDisable();
+    Object.assign(B, { session: '', account: '', accountName: '', validUntil: '', lastSync: 0, lastErr: '' }); save(false); render(); toast('Revolut déconnecté');
+  },
+  pushOn(el) {
+    el.disabled = true; el.textContent = 'Activation…';
+    pushEnable().then(() => { render(); toast('🔔 Notifications activées : regarde, un test arrive'); })
+      .catch(e => { toast('Notifications : ' + e.message); el.disabled = false; el.textContent = '🔔 Activer les notifications'; });
+  },
+  async pushTest() {
+    try { const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); if (!sub) throw new Error('réactive les notifications'); await eb('/push/test', 'POST', { endpoint: sub.endpoint }); toast('Test envoyé : il arrive dans quelques secondes'); }
+    catch (e) { toast('Notifications : ' + e.message); if (/réactive|pas abonné|expiré/.test(e.message)) { bankCfg().push = null; save(false); render(); } }
+  },
+  async pushOff() { if (!confirm('Ne plus être prévenu quand le salaire tombe ?')) return; await pushDisable(); render(); toast('Notifications désactivées'); },
+  keyForget() { if (!confirm('Retirer la clé privée de ce téléphone ? Le relais la garde : tout continue de marcher.')) return; bankCfg().privateKey = ''; save(false); render(); toast('🔒 Clé retirée de ce téléphone'); },
   async copyRelay() {
     try { const r = await fetch('relay/worker.js', { cache: 'no-store' }); const t = await r.text(); await navigator.clipboard.writeText(t); toast('Code du relais copié ✓'); }
     catch (e) { toast('Ouvre ' + appUrl() + 'relay/worker.js et copie tout le texte'); }
